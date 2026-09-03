@@ -1,5 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <thread>
+#include <algorithm>
+#include <Color.h>
 
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 600;
@@ -10,7 +12,6 @@ void drawingThread(sf::RenderWindow* window, sf::Sprite* sprite) {
     }
 
     while(window->isOpen()) {
-        window->clear();
         window->draw(*sprite);
         window->display();
     }
@@ -24,8 +25,10 @@ int main() {
 
     sf::Vector2u window_size = window.getSize();
 
+    Color color(0.5, 0.6, 0.1);
+
     sf::Texture texture(window_size);
-    std::vector<std::uint32_t> pixels(window_size.x * window_size.y, 0x000000ff);
+    std::vector<std::uint32_t> pixels(window_size.x * window_size.y, color.toABGR()); // ABGR
     texture.update(reinterpret_cast<std::uint8_t*>(pixels.data()));
 
     sf::Sprite sprite(texture);
@@ -37,6 +40,11 @@ int main() {
             if(event->is<sf::Event::Closed>())
                 window.close();
         }
+
+        color *= 0.999;
+        std::fill(pixels.begin(), pixels.end(), color.toABGR());
+        texture.update(reinterpret_cast<std::uint8_t*>(pixels.data()));
+
     }
 
     draw_thread.join();
