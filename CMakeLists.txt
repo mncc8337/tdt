@@ -13,7 +13,19 @@ FetchContent_Declare(SFML
     SYSTEM)
 FetchContent_MakeAvailable(SFML)
 
-add_executable(main src/main.cpp src/Color.cpp src/Vec3.cpp)
+add_executable(
+    main
+    src/main.cpp
+    src/Color.cpp
+    src/Vec3.cpp
+    src/RayTracer.cpp
+    src/Ray.cpp
+    src/Camera.cpp
+    src/HitInfo.cpp
+    src/Hittable.cpp
+    src/Sphere.cpp
+    src/Triangle.cpp
+)
 target_compile_features(main PRIVATE cxx_std_17)
 target_link_libraries(main PRIVATE SFML::Graphics)
 
