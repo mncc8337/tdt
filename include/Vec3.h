@@ -14,8 +14,8 @@ class Vec3{
         Vec3 operator*(double t) const;
         Vec3 operator/(double t) const;
 
-        double VoHuong(const Vec3& other) const;
-        Vec3 CoHuong(const Vec3& other) const;
+        double dot(const Vec3& other) const;
+        Vec3 cross(const Vec3& other) const;
 
         double length() const;
         Vec3 normal() const; // chuan hoa 

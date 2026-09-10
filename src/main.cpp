@@ -1,7 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <thread>
-#include <algorithm>
-#include <Color.h>
+
+#include "RayTracer.h"
 
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 600;
@@ -25,12 +25,9 @@ int main() {
 
     sf::Vector2u window_size = window.getSize();
 
-    Color color(0.5, 0.6, 0.1);
+    RayTracer rt(window_size.x, window_size.y);
 
     sf::Texture texture(window_size);
-    std::vector<std::uint32_t> pixels(window_size.x * window_size.y, color.toABGR()); // ABGR
-    texture.update(reinterpret_cast<std::uint8_t*>(pixels.data()));
-
     sf::Sprite sprite(texture);
 
     std::thread draw_thread(&drawingThread, &window, &sprite);
@@ -41,10 +38,8 @@ int main() {
                 window.close();
         }
 
-        color *= 0.999;
-        std::fill(pixels.begin(), pixels.end(), color.toABGR());
-        texture.update(reinterpret_cast<std::uint8_t*>(pixels.data()));
-
+        rt.render();
+        texture.update(rt.getData());
     }
 
     draw_thread.join();

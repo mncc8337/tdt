@@ -1,4 +1,4 @@
-#include <Color.h>
+#include "Color.h"
 #include <cmath>
 
 Color::Color(double r, double g, double b): r(r), g(g), b(b) {
