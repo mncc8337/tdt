@@ -1,5 +1,6 @@
 build
 out
+docs.pdf
 compile_commands.json
 .cache
 .idea
