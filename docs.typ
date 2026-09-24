@@ -41,39 +41,44 @@
   x: 1.5cm,
 ))
 
-= Trình dò tia trên CPU
-== Mục tiêu
+#set heading(numbering: "1.1.")
+
+#show raw: set text(font: "CaskaydiaCove NF")
+
+#align(center)[#text(size: 24pt, weight: "bold")[Trình dò tia trên CPU]]
+#v(1em)
+= Mục tiêu
 - Vận dụng kiến thức Lập trình hướng đối tượng để thiết kế kiến trúc phần mềm linh hoạt, có tính đóng gói cao và dễ dàng mở rộng các loại vật thể, vật liệu mới.
 - Ứng dụng Cấu trúc dữ liệu (cụ thể là cây nhị phân tìm kiếm) để giải quyết bài toán tối ưu hóa hiệu năng, giảm thiểu thời gian tính toán giao cắt trong không gian.
 - Xây dựng thành công một trình dò tia trên CPU có khả năng mô phỏng các định luật quang học và kết xuất hình ảnh chân thực.
 
-== Nhiệm vụ
-=== Về tính toán
-
+= Nhiệm vụ
+== Về tính toán
 - Cài đặt hệ thống hình học toán học cơ bản (Vector, Tia, Hộp bao AABB, Hình cầu, Tam giác).
 - Xử lý tính toán giao cắt tia với các hình học cơ bản (mặt cầu) và phức tạp (lưới đa giác tạo từ nhiều tam giác).
 - Mô phỏng các tính chất vật liệu quang học: phản xạ gương (kim loại), khúc xạ (thủy tinh/nước) và tán xạ khuếch tán (bề mặt nhám).
 - Tính toán ánh sáng toàn cục bằng thuật toán Path Tracing.
 
-=== Về cấu trúc dữ liệu
-
+== Về cấu trúc dữ liệu
 - Cài đặt cấu trúc dữ liệu cây BVH (Bounding Volume Hierarchy) để tăng tốc độ truy vấn giao điểm giữa tia và hàng ngàn vật thể trong không gian.
 - Ứng dụng đa luồng để phân chia công việc tính toán các điểm ảnh lên nhiều lõi CPU.
 
-=== Về giao diện
-
+== Về giao diện
 - Xây dựng không gian làm việc trực quan.
 - Xây dựng các chức năng tương tác thời gian thực:
   - Thay đổi thuộc tính vật thể (vị trí, góc quay, màu sắc, chiết suất, độ nhám, cường độ sáng).
   - Điều hướng Camera (vị trí, góc nhìn, tiêu cự).
 - Cung cấp tính năng lưu/tải cảnh và xuất kết quả kết xuất ra tệp tin ảnh PNG/JPG.
 
-== Thư viện sử dụng
+= Thư viện sử dụng
 - Thư viện đồ họa SFML kết hợp với thư viện giao diện người dùng ImGUI
 - Thư viện đa luồng `std::thread` có sẵn của C++11
 - Thư viện mảng động `std::vector` có sẵn của C++
-== Cấu trúc dữ liệu
-=== Tổng quan các lớp
+- Thư viện sinh số ngẫu nhiên `std::random` có sẵn của C++11
+- Thư viện quản lý bộ nhớ thông minh `std::memory` có sẵn của C++11
+
+= Cấu trúc dữ liệu
+== Tổng quan các lớp
 
 // #pagebreak()
 
@@ -288,7 +293,7 @@
         "+ object: Hittable*"
       ),
       none
-    )),
+    ), name: <hitinfo>),
 
     edge(<app>, <raytracer>, marks: composition),
 
@@ -312,6 +317,7 @@
     edge(<sphere>, <hittable>, marks: inheritance),
     edge(<mesh>, <hittable>, marks: inheritance),
     edge(<triangle>, <hittable>, marks: inheritance),
+    edge(<hitinfo>, <hittable>, marks: aggregation),
 
     edge(<imagetexture>, <texture>, marks: inheritance),
     edge(<colortexture>, <texture>, marks: inheritance),
@@ -323,42 +329,47 @@
 
 #pagebreak()
 
-=== Cây tìm kiếm BVH (Bounding Volume Hierachy)
-Thay vì duyệt tuyến tính trên danh sách các vật thể để xem tia hiện tại cắt vật nào gần nhất thì xây dựng cây nhị phân tìm kiếm để duyệt nhanh hơn.
+== Cây BVH (Bounding Volume Hierarchy)
+Thay vì duyệt tuyến tính qua toàn bộ danh sách vật thể để tìm giao điểm, hệ thống sử dụng cấu trúc cây nhị phân Bounding Volume Hierarchy (BVH) nhằm tối ưu hóa độ phức tạp thời gian truy vấn từ $O(N)$ xuống trung bình $O(log N)$.
 
-Cách xây:
-+ Chia các vật thể thành 2 nhóm có thể tích xấp xỉ nhau, 2 nhóm này sẽ tạo ra 2 nút con trên nút gốc ban đầu.
-+ Tếp tục chia như vậy cho đến khi số vật thể trong nhóm không lớn hơn 1 giới hạn nhất định. Khi này nút cuối cùng của 1 nhánh sẽ chứa nhóm vật thể này và là nút lá.
+=== Thuật toán xây dựng cây
+Được thực hiện đệ quy theo phương pháp chia để trị (Divide and Conquer):
++ Xác định hộp bao (AABB - Axis-Aligned Bounding Box) bao trọn toàn bộ các vật thể hiện có.
++ Tìm trục không gian dài nhất của hộp bao (X, Y hoặc Z) để làm trục phân chia.
++ Sắp xếp các vật thể dọc theo trục này và chia thành hai nhóm (nửa trái và nửa phải).
++ Tạo hai nút con (BVHNode) cho hai nhóm vừa chia. Tiếp tục đệ quy quá trình này cho đến khi số lượng vật thể trong một nút giảm xuống dưới một ngưỡng cho trước. Nút đó sẽ trở thành nút lá chứa mảng các vật thể thực tế.
 
-Khi tiến hành dò tia, chỉ cần kiểm tra xem tia có đi qua hộp bao căn theo trục (AABB) của 1 nhóm hay không. Nếu có thì tiếp tục xét 2 nút con của nút này. Cứ như vậy cho đến khi duyệt đến nút lá rồi tiến hành duyệt tuần tự các vật thể trong nhóm.
+=== Thuật toán truy vấn giao cắt
+Khi một tia được bắn ra, chương trình chỉ cần kiểm tra xem tia đó có cắt qua hộp bao AABB của nút gốc hay không:
+- Nếu *không cắt*: Bỏ qua hoàn toàn việc kiểm tra nhánh cây đó, giúp tiết kiệm lượng lớn phép tính.
+- Nếu *có cắt*: Tiếp tục đệ quy kiểm tra xuống hai nút con. Quá trình lặp lại cho tới khi chạm đến nút lá, lúc này thuật toán mới tiến hành kiểm tra giao cắt chi tiết với từng hình học (Sphere, Triangle, Mesh) nằm trong nút lá đó.
 
-== Thuật toán
-Chương trình sử dụng thuật toán cốt lõi là thuật toán dò tia cơ bản.
-
-==== Đầu vào
+= Thuật toán
+== Thuật toán dò tia cơ bản.
+=== Đầu vào
 - Vị trí của Camera và lưới điểm ảnh trên mặt phẳng chiếu.
 - Cấu trúc dữ liệu chứa các vật thể cần kết xuất trong không gian (cây BVH).
 - Các thông số môi trường (hàm ánh sáng nền, số lần dội tối đa).
 
-==== Đầu ra
+=== Đầu ra
 - Ma trận điểm ảnh mang thông tin màu sắc, tạo thành ảnh kết xuất cuối cùng từ góc nhìn của Camera.
 
-==== Phương pháp
+=== Phương pháp
 Với mỗi điểm ảnh trên màn hình, màu sắc được tính toán thông qua các bước sau:
 
 + *Khởi tạo tia:* 
-  Tạo một tia sáng `ray` có gốc tọa độ tại vị trí Camera, vector hướng đi qua điểm ảnh đang xét. Khởi tạo biến `color = (0, 0, 0)` để tích lũy màu sắc kết quả, và biến `ray_color = (1, 1, 1)` để theo dõi mức độ suy hao năng lượng của tia qua từng lần dội.
+  Tạo một tia sáng `ray` có gốc tọa độ tại vị trí Camera, vector hướng đi qua điểm ảnh đang xét. Khởi tạo biến `color = (0, 0, 0)` để tích lũy màu sắc kết quả, và biến `attenuation = (1, 1, 1)` để theo dõi mức độ suy hao năng lượng của tia qua từng lần dội.
 
 + *Dò tia:* Thực hiện vòng lặp dò tia (tối đa bằng số lần dội cho phép):
   + *Kiểm tra giao cắt:*
 
     Tìm giao điểm gần nhất của `ray` với các vật thể trong không gian.
-    - Nếu tia *không cắt* vật thể nào: Cộng phần ánh sáng môi trường vào kết quả: `color += ray_color * màu nền`. Kết thúc việc theo vết tia này và trả về kết quả dò tia là `color`.
+    - Nếu tia *không cắt* vật thể nào: Cộng phần ánh sáng môi trường vào kết quả: `color += attenuation * màu nền`. Kết thúc việc theo vết tia này và trả về kết quả dò tia là `color`.
     - Nếu tia *cắt* một vật thể tại điểm giao, tiếp tục các bước sau.
   
   + *Tính toán phát xạ và suy hao:* 
-    - Nếu vật thể là nguồn sáng, cộng phần năng lượng phát xạ của nó vào tổng màu: `color = color + ray_color * (màu vật thể * cường độ phát sáng)`.
-    - Cập nhật mức độ suy hao của tia sáng khi đập vào bề mặt: `ray_color = ray_color * màu vật thể`.
+    - Nếu vật thể là nguồn sáng, cộng phần năng lượng phát xạ của nó vào tổng màu: `color += attenuation * (màu vật thể * cường độ phát sáng)`.
+    - Cập nhật mức độ suy hao của tia sáng khi đập vào bề mặt: `attenuation *= màu vật thể`.
 
   + *Sinh tia thứ cấp:*
 
@@ -386,3 +397,47 @@ Với mỗi điểm ảnh trên màn hình, màu sắc được tính toán thô
     $ arrow(d)_"new" = (1 - r) arrow(d)_"spec" + r arrow(d)_"diff" $
 
 + *Lặp lại Bước 2*: với tia `ray` vừa được cập nhật hướng và gốc mới, quá trình tiếp tục cho đến khi tia bay ra ngoài không gian hoặc đạt giới hạn số lần dội. Màu `color` cuối cùng sẽ là màu của điểm ảnh.
+
+== Thuật toán xây dựng BVH
+=== Đầu vào
+- Danh sách các vật thể trong không gian.
+- Giới hạn số lượng vật thể tối đa cho phép trong một nút lá `n`.
+
+=== Đầu ra
+- Nút gốc của cây BVH.
+
+=== Phương pháp
++ Tính toán AABB bao trọn toàn bộ danh sách các vật thể hiện tại.
++ Nếu số lượng vật thể trong danh sách nhỏ hơn hoặc bằng `n`:
+  - Khởi tạo `BVHNode` hiện tại thành nút lá.
+  - Gán danh sách vật thể cho nút lá này quản lý.
+  - Kết thúc đệ quy và trả về nút hiện tại.
++ Nếu số lượng vật thể lớn hơn `n`, dựa vào kích thước (chiều dài, rộng, cao) của AABB tổng vừa tìm được, chọn ra trục không gian dài nhất (trục $X$, $Y$ hoặc $Z$).
++ Sắp xếp danh sách các vật thể theo thứ tự tăng dần dựa trên tọa độ trọng tâm của chúng dọc theo trục vừa chọn. Sau đó, chia danh sách đã sắp xếp thành hai nửa bằng nhau (nửa trái và nửa phải).
++ Gọi đệ quy thuật toán này để xây dựng hai nhánh con:
+  - Khởi tạo nút `left` từ nửa danh sách bên trái.
+  - Khởi tạo nút `right` từ nửa danh sách bên phải.
++ Tạo `BVHNode` hiện tại với hai con là `left` và `right`. Cập nhật hộp bao AABB của nút này bằng AABB của nút `left` và nút `right`. Trả về nút hiện tại.
+
+== Thuật toán truy vấn giao cắt trên cây BVH
+=== Đầu vào
+- Nút BVH hiện tại cần kiểm tra (bắt đầu bằng nút gốc).
+- Tia sáng `ray` (bao gồm vị trí gốc và vector hướng).
+- Khoảng cách va chạm gần nhất tính đến thời điểm hiện tại `t_max` (dùng để tối ưu hóa, bỏ qua các vật thể nằm xa hơn điểm đã va chạm trước đó).
+
+=== Đầu ra
+- Trạng thái giao cắt (`true` nếu có cắt, `false` nếu không).
+- Cấu trúc `HitInfo` chứa thông tin chi tiết về điểm giao cắt gần nhất (nếu có).
+
+=== Phương pháp
++ Kiểm tra giao cắt giữa tia `ray` và hộp bao `AABB` của nút hiện tại. Nếu tia không cắt hộp bao, hoặc điểm giao cắt lớn hơn `t_max`, lập tức dừng đệ quy và trả về `false`.
++ Nếu nút hiện tại là nút lá:
+  - Khởi tạo cờ `hit_anything = false`.
+  - Duyệt tuần tự qua mảng các vật thể nằm bên trong nút lá.
+  - Gọi thuật toán kiểm tra giao cắt chi tiết của từng vật thể với tia `ray`.
+  - Nếu có va chạm gần hơn `t_max`, ghi nhận thông tin vào `HitInfo`, cập nhật lại `t_max` bằng khoảng cách va chạm mới, và gán `hit_anything = true`.
+  - Trả về cờ `hit_anything`.
++ Nếu nút hiện tại là nút nhánh (có hai nút con `left` và `right`):
+  - Gọi đệ quy thuật toán này trên nhánh `left`. Nếu có va chạm, `t_max` sẽ tự động được thu hẹp lại.
+  - Gọi đệ quy thuật toán này trên nhánh `right` với giới hạn `t_max` mới nhất (giúp nhánh `right` có thể thoát sớm nếu mọi vật thể bên phải đều xa hơn điểm đã cắt bên trái).
+  - Trả về `true` nếu có xảy ra va chạm ở bất kỳ nhánh con nào.
