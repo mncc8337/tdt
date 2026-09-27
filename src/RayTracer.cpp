@@ -18,8 +18,8 @@ const Color RayTracer::trace(Ray& ray) const {
 
 void RayTracer::render() {
     // TODO: multi threading
-    for(unsigned i = 0; i < viewport_width; i++) {
-        for(unsigned j = 0; j < viewport_height; j++) {
+    for(unsigned j = 0; j < viewport_height; j++) {
+        for(unsigned i = 0; i < viewport_width; i++) {
             Ray ray = camera.getRayAt(i, j);
             Color cl = trace(ray);
             pixels[i + j * viewport_width] = cl.toABGR();

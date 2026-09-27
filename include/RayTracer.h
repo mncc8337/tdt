@@ -11,6 +11,7 @@ private:
     unsigned viewport_width;
     unsigned viewport_height;
     Camera camera;
+
     std::vector<std::uint32_t> pixels;
 
 public:
