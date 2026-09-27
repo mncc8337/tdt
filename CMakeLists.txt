@@ -6,7 +6,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 include(FetchContent)
 
-FetchContent_Declare(SFML
+FetchContent_Declare(sfml
     GIT_REPOSITORY https://github.com/SFML/SFML.git
     GIT_TAG 3.1.0
     GIT_SHALLOW ON
@@ -27,8 +27,8 @@ FetchContent_Declare(imgui-sfml
 
 option(SFML_BUILD_AUDIO "Build audio" OFF)
 option(SFML_BUILD_NETWORK "Build network" OFF)
-FetchContent_MakeAvailable(sfml)
 
+FetchContent_MakeAvailable(sfml)
 FetchContent_MakeAvailable(imgui)
 
 set(IMGUI_DIR ${imgui_SOURCE_DIR})
@@ -37,29 +37,17 @@ option(IMGUI_SFML_IMGUI_DEMO "Build imgui_demo.cpp" ON)
 
 FetchContent_MakeAvailable(imgui-sfml)
 
-add_executable(
-    main
-    src/main.cpp
-    src/Color.cpp
-    src/Vec3.cpp
-    src/RayTracer.cpp
-    src/Ray.cpp
-    src/Camera.cpp
-    src/HitInfo.cpp
-    src/Hittable.cpp
-    src/Sphere.cpp
-    src/Triangle.cpp
+add_executable(tdt)
+
+target_compile_features(tdt PRIVATE cxx_std_20)
+
+target_link_libraries(tdt
+    PRIVATE SFML::Graphics
+    PUBLIC ImGui-SFML::ImGui-SFML
 )
 
-target_compile_features(main PRIVATE cxx_std_20)
-target_link_libraries(
-    main
-    PRIVATE
-        SFML::Graphics
-    PUBLIC
-        ImGui-SFML::ImGui-SFML
-)
+target_include_directories(tdt PRIVATE src)
 
-target_include_directories(main PRIVATE include)
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT tdt)
 
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT main)
+add_subdirectory(src)
