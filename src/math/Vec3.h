@@ -33,6 +33,9 @@ public:
     const float dot(const Vec3& other) const;
     const Vec3 cross(const Vec3& other) const;
 
+    const float length_squared() const;
     const float length() const;
+
     const Vec3 normalized() const;
+    const Vec3 normalize();
 };

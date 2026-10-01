@@ -57,7 +57,7 @@ HitInfo Triangle::hit(const Ray& ray) const {
     else
         info.normal = outward_normal * -1;
 
-    info.object = const_cast<Triangle*>(this);
+    info.object = this;
 
     return info;
 }

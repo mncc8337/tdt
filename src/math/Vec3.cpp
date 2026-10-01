@@ -81,12 +81,22 @@ const Vec3 Vec3::cross(const Vec3& other) const {
     );
 }
 
+const float Vec3::length_squared() const {
+    return x * x + y * y + z * z;
+}
+
 const float Vec3::length() const {
-    return std::sqrt(x * x + y * y + z * z);
+    return std::sqrt(length_squared());
 }
 
 const Vec3 Vec3::normalized() const {
     double len = length();
     return *this / len;
+}
+
+const Vec3 Vec3::normalize() {
+    double len = length();
+    *this = *this / len;
+    return *this;
 }
 
