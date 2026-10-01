@@ -37,7 +37,7 @@ double Vec3::length() const {
     return std::sqrt(x * x + y * y + z * z);
 }
 
-Vec3 Vec3::normal() const {
+Vec3 Vec3::normalized() const {
     double len = length();
     return *this / len;
 }

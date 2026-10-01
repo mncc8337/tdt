@@ -18,5 +18,5 @@ class Vec3{
         Vec3 cross(const Vec3& other) const;
 
         double length() const;
-        Vec3 normal() const; // chuan hoa 
+        Vec3 normalized() const;
 };
