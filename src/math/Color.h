@@ -1,32 +1,19 @@
 #pragma once
 
 #include <cstdint>
+#include "Vec3.h"
 
-class Color {
-private:
-    double r;
-    double g;
-    double b;
-
+class Color: Vec3 {
 public:
-    Color(double r, double g, double b);
+    Color(const float r, const float g, const float b);
 
-    const double getR();
-    const double getG();
-    const double getB();
+    const float getR() const;
+    const float getG() const;
+    const float getB() const;
 
-    void setR(const double x);
-    void setG(const double x);
-    void setB(const double x);
+    void setR(const float x);
+    void setG(const float x);
+    void setB(const float x);
 
     const std::uint32_t toABGR();
-
-    Color operator +(Color cl);
-    Color operator +=(Color cl);
-
-    Color operator -(Color cl);
-    Color operator -=(Color cl);
-
-    Color operator *(double x);
-    Color operator *=(double x);
 };
