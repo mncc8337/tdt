@@ -6,6 +6,8 @@ Color::Color(const float r, const float g, const float b): Vec3(r, g, b) {
     if(z < 0) z = 0;
 }
 
+Color::Color(const Vec3& v): Vec3(v) {}
+
 const std::uint32_t Color::toABGR() {
     std::uint8_t r255 = x * 255.999999;
     std::uint8_t g255 = y * 255.999999;

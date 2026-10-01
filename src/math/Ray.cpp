@@ -13,7 +13,7 @@ void Ray::setOrigin(const Vec3 new_org) {
 }
 
 const Vec3& Ray::getDirection() const {
-    return origin;
+    return direction;
 }
 
 void Ray::setDirection(const Vec3 new_dir) {

@@ -3,23 +3,28 @@
 #include <cstdint>
 #include <vector>
 
-#include "Camera.h"
 #include "Color.h"
+#include "Camera.h"
+#include "Scene.h"
 
 class RayTracer {
 private:
     unsigned viewport_width;
     unsigned viewport_height;
-    Camera camera;
+
+    unsigned max_bounces = 10;
+
+    Camera& camera;
+    Scene& scene;
 
     std::vector<std::uint32_t> pixels;
 
 public:
-    RayTracer(unsigned viewport_width, unsigned viewport_height);
+    RayTracer(unsigned viewport_width, unsigned viewport_height, Camera& camera, Scene& scene);
 
     const std::uint8_t* getData() const;
 
-    const Color trace(Ray& ray) const;
+    const Color trace(Ray ray) const;
 
     void render();
 };

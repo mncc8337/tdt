@@ -3,9 +3,10 @@
 #include <cstdint>
 #include "Vec3.h"
 
-class Color: Vec3 {
+class Color: public Vec3 {
 public:
     Color(const float r, const float g, const float b);
+    Color(const Vec3& v);
 
     const float getR() const;
     const float getG() const;
