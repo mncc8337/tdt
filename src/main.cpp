@@ -72,22 +72,19 @@ int main() {
             break;
         }
 
-        // Cập nhật texture nếu render thread đã làm xong 1 frame
         if(is_data_ready) {
             texture.update(rt.getData());
-            is_data_ready = false; // Báo cho render thread biết để tiếp tục làm frame mới
+            is_data_ready = false;
         }
 
         sf::Time time_elapsed = delta_clock.restart();
         ImGui::SFML::Update(window, time_elapsed);
 
-        // GUI
         ImGui::ShowDemoWindow();
         ImGui::Begin("Hello, world!");
         ImGui::Button("Look at this pretty button");
         ImGui::End();
 
-        // RENDER PIPELINE CỦA SFML (Thêm window.clear)
         window.clear(); 
         window.draw(sprite);
         ImGui::SFML::Render(window);

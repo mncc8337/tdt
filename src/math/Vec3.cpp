@@ -82,7 +82,7 @@ const Vec3 Vec3::cross(const Vec3& other) const {
 }
 
 const float Vec3::length_squared() const {
-    return x * x + y * y + z * z;
+    return this->dot(*this);
 }
 
 const float Vec3::length() const {
