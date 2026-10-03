@@ -6,6 +6,8 @@
 #include <thread>
 
 #include "RayTracer.h"
+#include "rendering/texture/ColorTexture.h"
+#include "rendering/material/Metal.h"
 #include "rendering/hittable/Sphere.h"
 
 #include "imgui.h"
@@ -17,12 +19,14 @@ const int WINDOW_HEIGHT = 600;
 std::atomic<bool> is_running{false};
 std::atomic<bool> is_data_ready{false};
 
+unsigned pass = 0;
+
 void render_routine(RayTracer* tracer) {
     while(!is_running) std::this_thread::yield();
 
     while(is_running) {
         if (!is_data_ready) {
-            tracer->render();
+            tracer->render(pass++);
             is_data_ready = true;
         } else {
             std::this_thread::yield(); 
@@ -47,8 +51,9 @@ int main() {
     sf::Vector2u window_size = window.getSize();
     RayTracer rt(window_size.x, window_size.y, camera, scene);
 
-    Sphere sphere(Vec3(0, 0, -5), 1.0f);
-    scene.add_object(std::make_unique<Sphere>(sphere));
+    Texture& tex = scene.add_texture(std::make_unique<ColorTexture>(Color(1, 1, 1)));
+    Material& mat = scene.add_material(std::make_unique<Metal>(&tex, 1.0));
+    scene.add_object(std::make_unique<Sphere>(&mat, Vec3(1, 0, -6), 1.0f));
 
     sf::Texture texture(window_size);
     sf::Sprite sprite(texture);

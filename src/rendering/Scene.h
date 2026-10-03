@@ -8,14 +8,18 @@
 class Scene {
 private:
     std::vector<std::unique_ptr<Hittable>> objects;
-    // std::vector<std::unique_ptr<Material>> materials;
-    // std::vector<std::unique_ptr<Texture>> textures;
+    std::vector<std::unique_ptr<Material>> materials;
+    std::vector<std::unique_ptr<Texture>> textures;
 
     // std::unique_ptr<BVHNode>> bvh_root;
 
 public:
-    void add_object(std::unique_ptr<Hittable> object);
+    Hittable& add_object(std::unique_ptr<Hittable> object);
     // void remove_object(Hittable* object);
+
+    Material& add_material(std::unique_ptr<Material> material);
+
+    Texture& add_texture(std::unique_ptr<Texture> texture);
 
     HitInfo get_closest(const Ray& ray) const;
 

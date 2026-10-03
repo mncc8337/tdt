@@ -3,8 +3,6 @@
 #include "HitInfo.h"
 #include "Vec3.h"
 
-#define PIXEL2WORLD(px) (px/1000.0f)
-
 RayTracer::RayTracer(
     unsigned viewport_width,
     unsigned viewport_height,
@@ -15,34 +13,42 @@ RayTracer::RayTracer(
     viewport_height(viewport_height),
     camera(camera),
     scene(scene),
-    pixels(std::vector<std::uint32_t>(viewport_width * viewport_height)) {}
+    buffer(viewport_width * viewport_height),
+    pixels(viewport_width * viewport_height) {}
 
 const std::uint8_t* RayTracer::getData() const {
     return reinterpret_cast<const std::uint8_t*>(pixels.data());
 }
 
 const Color RayTracer::trace(Ray ray) const {
-    Color attenuation(1, 1, 1);
-    Color ray_color(0, 0, 0);
-
-    // test light src
-    Vec3 light_pos(-3, 2, -5); 
+    Color final_color(0, 0, 0);
+    Color throughput(1, 1, 1);
 
     for(unsigned bounces = 0; bounces < max_bounces; bounces++) {
         HitInfo rec = scene.get_closest(ray);
-        if(rec.object) {
-            Vec3 light_dist = light_pos - rec.hit_point;
-            Vec3 light_dir = light_dist.normalized();
-            float diffuse_intensity = 1.3 * std::max(0.0f, rec.normal.dot(light_dir));
-            ray_color = Color(1, 1, 1) * diffuse_intensity / light_dist.length_squared();
+        if(!DID_HIT(rec)) {
+            // TODO: impl SkyBox class
+            float cosine = ray.getDirection().dot(Vec3(0, 1, 0));
+            float interpolate = (cosine + 1) / 2;
+            Color sky_color = Vec3(1, 1, 1).lerp(Vec3(0.55, 0.84, 1.0), interpolate);
+            final_color += throughput * sky_color;
             break;
         }
+
+        Color emitted = rec.material->emitted(rec.uvx, rec.uvy, rec.hit_point);
+        final_color += throughput * emitted;
+
+        Color attenuation;
+        if(!rec.material->scatter(ray, attenuation, rec))
+            break; 
+
+        throughput *= attenuation;
     }
 
-    return ray_color;
+    return final_color;
 }
 
-void RayTracer::render() {
+void RayTracer::render(unsigned pass) {
     float viewport_h = 2.0f; 
     float viewport_w = viewport_h * ((float)viewport_width / viewport_height);
 
@@ -53,9 +59,11 @@ void RayTracer::render() {
 
             float px = u * viewport_w;
             float py = -v * viewport_h;
+            Color new_color = trace(camera.getRayAt(px, py));
             
-            Color cl = trace(camera.getRayAt(px, py));
-            pixels[i + j * viewport_width] = cl.toABGR();
+            Color& color = buffer[i + j * viewport_width];
+            color = (color * pass + new_color) / (pass + 1);
+            pixels[i + j * viewport_width] = color.toABGR();
         }
     }
 }

@@ -9,6 +9,10 @@ private:
     float radius;
 
 public:
-    Sphere(const Vec3& center, float radius);
+    Sphere(
+        Material* material,
+        const Vec3& center,
+        float radius
+    );
     HitInfo hit(const Ray& ray) const override;
 };
