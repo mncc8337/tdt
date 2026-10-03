@@ -7,25 +7,25 @@ inline bool _equal_zero(float a) {
     return std::abs(a) < EPSILON;
 }
 
-Sphere::Sphere(const Vec3& center, float radius) : center(center), radius(radius) {}
+Sphere::Sphere(
+    Material* material,
+    const Vec3& center,
+    float radius
+):
+    Hittable(material),
+    center(center),
+    radius(radius) {}
 
 HitInfo Sphere::hit(const Ray& ray) const {
     HitInfo info;
 
     Vec3 offset_origin = ray.getOrigin() - center;
 
-    // since ray.getDirection() is always normalised
-    // the a term simply equals to 1.0
-    // so we can get rid of it from any multiplication/division
-    float half_b = offset_origin.dot(ray.getDirection());
+    float a = ray.getDirection().length_squared();
+    float half_b = -offset_origin.dot(ray.getDirection());
     float c = offset_origin.length_squared() - radius * radius;
 
-    // determine whether the ray origin is in the sphere or not
-    // if offset_origin.length - radius is negative then offset_origin.length^2 - radius^2 is also negative. it is the same if the result is positive or zero
-    // so we can reuse c instead of having to calculate the length of offset_origin
-    bool inside_object = c < 0;
-
-    float discriminant = half_b * half_b - c;
+    float discriminant = half_b * half_b - a * c;
 
     if (discriminant < 0) {
         return info;
@@ -33,9 +33,11 @@ HitInfo Sphere::hit(const Ray& ray) const {
 
     float sqrt_d = std::sqrt(discriminant);
 
-    float dist = half_b - sqrt_d;
-    if (dist < EPSILON) {
-        dist = half_b + sqrt_d;
+    float inv_a = 1.0f / a;
+    float dist = (half_b - sqrt_d) * inv_a;
+
+    if(dist < EPSILON) {
+        dist = (half_b + sqrt_d) * inv_a;
     }
 
     // prevent back-intersection
@@ -49,15 +51,14 @@ HitInfo Sphere::hit(const Ray& ray) const {
     info.hit_point = ray.point(dist);
 
     Vec3 outward_normal = (info.hit_point - center) / radius;
+    info.front_face = ray.getDirection().dot(outward_normal) < 0;
 
-    info.front_face = not inside_object;
-
-    if (info.front_face)
+    if(info.front_face)
         info.normal = outward_normal;
     else
         info.normal = -outward_normal;
 
-    info.object = this;
+    info.material = material;
 
     return info;
 }

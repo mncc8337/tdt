@@ -5,7 +5,7 @@
 
 class Color: public Vec3 {
 public:
-    Color(const float r, const float g, const float b);
+    Color(const float r = 0, const float g = 0, const float b = 0);
     Color(const Vec3& v);
 
     const float getR() const;

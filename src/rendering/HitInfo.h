@@ -2,14 +2,15 @@
 
 #include "math/Vec3.h"
 
-class Hittable;
+#define DID_HIT(rec) ((rec).distance > 0.0)
+
+class Material;
 
 struct HitInfo {
-    float distance = -1.0; // neg value == no hit
+    float distance = -1;
     Vec3 hit_point;
     Vec3 normal;
-    const Hittable* object;
+    const Material* material = nullptr;
     bool front_face;
-
-    HitInfo() : hit_point(), distance(0), normal(), object(nullptr), front_face(false) {}
+    float uvx, uvy;
 };

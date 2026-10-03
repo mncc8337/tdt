@@ -1,7 +1,17 @@
 #include "Triangle.h"
+#include "Hittable.h"
 #include <cmath>
 
-Triangle::Triangle(const Vec3& v0, const Vec3& v1, const Vec3& v2) : v0(v0), v1(v1), v2(v2) {}
+Triangle::Triangle(
+    Material* material,
+    const Vec3& v0,
+    const Vec3& v1,
+    const Vec3& v2
+):
+    Hittable(material),
+    v0(v0),
+    v1(v1),
+    v2(v2) {}
 
 HitInfo Triangle::hit(const Ray& ray) const {
     HitInfo info;
@@ -57,7 +67,7 @@ HitInfo Triangle::hit(const Ray& ray) const {
     else
         info.normal = outward_normal * -1;
 
-    info.object = this;
+    info.material = material;
 
     return info;
 }

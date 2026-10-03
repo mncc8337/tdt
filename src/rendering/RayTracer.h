@@ -17,6 +17,7 @@ private:
     Camera& camera;
     Scene& scene;
 
+    std::vector<Color> buffer;
     std::vector<std::uint32_t> pixels;
 
 public:
@@ -26,5 +27,5 @@ public:
 
     const Color trace(Ray ray) const;
 
-    void render();
+    void render(unsigned pass);
 };
