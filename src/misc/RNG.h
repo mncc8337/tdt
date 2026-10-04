@@ -15,5 +15,6 @@ public:
     static float normal();
     static Vec3 direction_unnormalized();
     static Vec3 direction_normalized();
+    static Vec3 direction_in_unit_sphere();
     static Color color();
 };

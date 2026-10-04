@@ -6,6 +6,8 @@
 class Triangle : public Hittable {
 private:
     RawTriangle triangle;
+    AABB getLocalAABB() const override;
+
 public:
     Triangle(
         Material* material,

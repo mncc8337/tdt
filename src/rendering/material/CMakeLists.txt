@@ -1,6 +1,7 @@
 target_sources(tdt
   PRIVATE 
     Metal.cpp
+    Matte.cpp
     Dielectric.cpp
 )
 

@@ -13,10 +13,11 @@ private:
     void init_bvh();
     int flatten_bvh_tree(BVHNode* node, int& offset);
 
+    AABB getLocalAABB() const override;
+
 public:
     Mesh(Material* material, const std::vector<RawTriangle>& tris);
     Mesh(Material* material, std::string filename);
 
     HitInfo hit(const Ray& ray) const override;
-    AABB getAABB() const override;
 };

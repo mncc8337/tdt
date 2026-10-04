@@ -2,6 +2,8 @@ target_sources(tdt
   PRIVATE
     Vec3.cpp
     Vec2.cpp
+    Mat3x3.cpp
+    Transform.cpp
     Ray.cpp
     AABB.cpp
     RawTriangle.cpp

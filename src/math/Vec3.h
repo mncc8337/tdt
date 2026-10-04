@@ -29,10 +29,13 @@ struct Vec3 {
     friend Vec3 operator *(const float t, const Vec3& v);
 
     Vec3 operator *(const Vec3& v) const;
-    Vec3 operator *=(const Vec3& v);
+    const Vec3& operator *=(const Vec3& v);
 
     Vec3 operator /(const float t) const;
     const Vec3& operator /=(const float t);
+
+    Vec3 operator /(const Vec3& v) const;
+    const Vec3& operator /=(const Vec3& v);
 
     float dot(const Vec3& other) const;
     Vec3 cross(const Vec3& other) const;

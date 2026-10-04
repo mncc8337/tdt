@@ -8,6 +8,8 @@ private:
     Vec3 center;
     float radius;
 
+    AABB getLocalAABB() const override;
+
 public:
     Sphere(
         Material* material,
@@ -16,6 +18,4 @@ public:
     );
 
     HitInfo hit(const Ray& ray) const override;
-
-    AABB getAABB() const override;
 };

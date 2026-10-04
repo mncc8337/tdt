@@ -14,10 +14,14 @@ Sphere::Sphere(
 HitInfo Sphere::hit(const Ray& ray) const {
     HitInfo info;
 
-    Vec3 offset_origin = ray.origin - center;
+    Ray local_ray = ray;
+    local_ray.origin = transform.point_apply_inverse(local_ray.origin);
+    local_ray.direction = transform.dir_apply_inverse(local_ray.direction);
 
-    float a = ray.direction.length_squared();
-    float half_b = -offset_origin.dot(ray.direction);
+    Vec3 offset_origin = local_ray.origin - center;
+
+    float a = local_ray.direction.length_squared();
+    float half_b = -offset_origin.dot(local_ray.direction);
     float c = offset_origin.length_squared() - radius * radius;
 
     float discriminant = half_b * half_b - a * c;
@@ -43,10 +47,10 @@ HitInfo Sphere::hit(const Ray& ray) const {
     }
 
     info.distance = dist;
-    info.hit_point = ray.point(dist);
+    info.hit_point = local_ray.point(dist);
 
     Vec3 outward_normal = (info.hit_point - center) / radius;
-    info.front_face = ray.direction.dot(outward_normal) < 0;
+    info.front_face = local_ray.direction.dot(outward_normal) < 0;
 
     if(info.front_face)
         info.normal = outward_normal;
@@ -54,10 +58,13 @@ HitInfo Sphere::hit(const Ray& ray) const {
         info.normal = -outward_normal;
 
     info.material = material;
+    info.hit_point = transform.point_apply(info.hit_point);
+    info.distance = (info.hit_point - ray.origin).dot(ray.direction);
+    info.normal = transform.normal_apply(info.normal);
 
     return info;
 }
 
-AABB Sphere::getAABB() const {
+AABB Sphere::getLocalAABB() const {
     return AABB({center + Vec3(radius), center - Vec3(radius)});
 }
