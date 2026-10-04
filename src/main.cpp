@@ -9,7 +9,11 @@
 #include "RayTracer.h"
 #include "rendering/texture/ColorTexture.h"
 #include "rendering/material/Metal.h"
+#include "rendering/material/Matte.h"
+#include "rendering/material/Dielectric.h"
 #include "rendering/hittable/Mesh.h"
+#include "rendering/hittable/Triangle.h"
+#include "rendering/hittable/Sphere.h"
 
 #include "imgui.h"
 #include "imgui-SFML.h"
@@ -50,23 +54,58 @@ int main() {
 
     Camera camera(
         1.0f,
-        Vec3(0, 0.15, 0.15),
-        Vec3(-0.01, 0.03, 0)
+        Vec3(-3, 5, 10),
+        Vec3(0, 0, 0)
     );
     Scene scene;
     sf::Vector2u window_size = window.getSize();
     RayTracer rt(window_size.x, window_size.y, camera, scene);
 
-    Texture& red_tex = scene.add_texture(
-        std::make_unique<ColorTexture>(Color(1, 0, 0))
+    Texture& gray_tex = scene.add_texture(
+        std::make_unique<ColorTexture>(Color(0.98))
     );
-    Material& red_metal_mat = scene.add_material(
-        std::make_unique<Metal>(&red_tex, 1.0f)
+    Material& gray_matte_mat = scene.add_material(
+        std::make_unique<Matte>(&gray_tex)
     );
-    scene.add_object(std::make_unique<Mesh>(
-        &red_metal_mat,
-        "assets/model/stanford-bunny.obj"
+
+    Texture& gold_tex = scene.add_texture(
+        std::make_unique<ColorTexture>(Color(1, 0.894f, 0.29f))
+    );
+    Material& gold_metal_mat = scene.add_material(
+        std::make_unique<Metal>(&gold_tex, 0.2f)
+    );
+
+    Texture& white_tex = scene.add_texture(
+        std::make_unique<ColorTexture>(Color(1))
+    );
+    Material& white_dielec_mat = scene.add_material(
+        std::make_unique<Dielectric>(&white_tex, 1.52f)
+    );
+
+    Hittable& platform = scene.add_object(std::make_unique<Triangle>(
+        &gray_matte_mat,
+        Vec3(0, 0, -100),
+        Vec3(100, 0, 10),
+        Vec3(-100, 0, 10)
     ));
+
+    Hittable& teapot = scene.add_object(std::make_unique<Mesh>(
+        &gold_metal_mat,
+        "assets/model/teapot.obj"
+    ));
+    teapot.getTransform().rotate(Vec3(0, 0, 0)).move(Vec3(0, 0, 0));
+
+    Hittable& sphere = scene.add_object(std::make_unique<Sphere>(
+        &white_dielec_mat,
+        Vec3(1.2, 1, 4.4),
+        1
+    ));
+
+    Hittable& dodecahedron = scene.add_object(std::make_unique<Mesh>(
+        &white_dielec_mat,
+        "assets/model/dodecahedron.obj"
+    ));
+    dodecahedron.getTransform().rotate(Vec3(M_PIf, 0, 0)).move(Vec3(-3, 1.5, 2.0));
 
     scene.build_bvh();
 
@@ -74,6 +113,7 @@ int main() {
     sf::Sprite sprite(texture);
 
     sf::Clock delta_clock;
+    float total_time = 0;
 
     std::thread render_thread(render_routine, &rt);
     is_running = true;
@@ -98,6 +138,7 @@ int main() {
         }
 
         sf::Time time_elapsed = delta_clock.restart();
+        total_time += time_elapsed.asSeconds();
         ImGui::SFML::Update(window, time_elapsed);
 
         ImGui::ShowDemoWindow();

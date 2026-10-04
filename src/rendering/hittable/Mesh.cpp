@@ -48,6 +48,10 @@ int Mesh::flatten_bvh_tree(BVHNode* node, int& offset) {
 HitInfo Mesh::hit(const Ray& ray) const {
     HitInfo closest_hit;
 
+    Ray local_ray = ray;
+    local_ray.origin = transform.point_apply_inverse(local_ray.origin);
+    local_ray.direction = transform.dir_apply_inverse(local_ray.direction);
+
     if(flat_bvh.empty()) return closest_hit;
 
     int nodes_to_visit[64];
@@ -58,22 +62,22 @@ HitInfo Mesh::hit(const Ray& ray) const {
         const LinearBVHNode& node = flat_bvh[current_node_index];
 
         float aabb_t_max = DID_HIT(closest_hit) ? closest_hit.distance : FAR_DISTANCE;
-        if(node.aabb.hit(ray, EPSILON, aabb_t_max)) {
+        if(node.aabb.hit(local_ray, EPSILON, aabb_t_max)) {
             if(node.num_objects > 0) {
                 for(int i = 0; i < node.num_objects; ++i) {
                     const auto& tri = tris[node.primitives_offset + i];
 
                     Vec3 tuv;
                     float tri_t_max = DID_HIT(closest_hit) ? closest_hit.distance : FAR_DISTANCE;
-                    if(tri.hit(ray, EPSILON, tri_t_max, tuv)) {
+                    if(tri.hit(local_ray, EPSILON, tri_t_max, tuv)) {
                         closest_hit.distance = tuv.x;
-                        closest_hit.hit_point = ray.point(tuv.x);
+                        closest_hit.hit_point = local_ray.point(tuv.x);
 
                         Vec3 edge1 = tri.v1 - tri.v0;
                         Vec3 edge2 = tri.v2 - tri.v0;
                         Vec3 outward_normal = edge1.cross(edge2).normalized();
 
-                        closest_hit.front_face = ray.direction.dot(outward_normal) < 0.0f;
+                        closest_hit.front_face = local_ray.direction.dot(outward_normal) < 0.0f;
                         closest_hit.normal = closest_hit.front_face ? outward_normal : -outward_normal;
                         float u = tuv.y;
                         float v = tuv.z;
@@ -97,10 +101,16 @@ HitInfo Mesh::hit(const Ray& ray) const {
 
     if(DID_HIT(closest_hit)) {
         closest_hit.material = material;
+        // convert to world space coordinates
+        closest_hit.hit_point = transform.point_apply(closest_hit.hit_point);
+        // project the hp-origin vector to the ray direction
+        // since ray direction is normalized, it simply equals to its world space distance
+        closest_hit.distance = (closest_hit.hit_point - ray.origin).dot(ray.direction);
+        closest_hit.normal = transform.normal_apply(closest_hit.normal);
     }
     return closest_hit;
 }
 
-AABB Mesh::getAABB() const {
+AABB Mesh::getLocalAABB() const {
     return aabb;
 }

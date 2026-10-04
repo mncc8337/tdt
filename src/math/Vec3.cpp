@@ -48,7 +48,7 @@ Vec3 Vec3::operator *(const Vec3& v) const {
     return Vec3(this->x * v.x, this->y * v.y, this->z * v.z);
 }
 
-Vec3 Vec3::operator *=(const Vec3& v) {
+const Vec3& Vec3::operator *=(const Vec3& v) {
     *this = *this * v;
     return *this;
 }
@@ -63,6 +63,19 @@ Vec3 Vec3::operator /(const float t) const {
 
 const Vec3& Vec3::operator /=(const float t) {
     *this = *this / t;
+    return *this;
+}
+
+Vec3 Vec3::operator /(const Vec3& v) const {
+    return Vec3(
+        x / v.x,
+        y / v.y,
+        z / v.z
+    );
+}
+
+const Vec3& Vec3::operator /=(const Vec3& v) {
+    *this = *this / v;
     return *this;
 }
 
