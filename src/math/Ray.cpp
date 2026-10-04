@@ -20,6 +20,6 @@ void Ray::setDirection(const Vec3 new_dir) {
     direction = new_dir;
 }
 
-Vec3 Ray::point(const double distance) const {
+Vec3 Ray::point(const float distance) const {
     return origin + direction * distance;
 }

@@ -8,7 +8,12 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -flto")
+if(MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /fp:fast /GL")
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG")
+else()
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -flto")
+endif()
 
 include(FetchContent)
 
