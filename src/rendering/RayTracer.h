@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <vector>
 
-#include "Color.h"
 #include "Camera.h"
 #include "Scene.h"
 

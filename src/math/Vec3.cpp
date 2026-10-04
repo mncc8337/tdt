@@ -5,30 +5,6 @@
 Vec3::Vec3() : x(0), y(0), z(0) {}
 Vec3::Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
 
-float Vec3::getX() const {
-    return x;
-}
-
-float Vec3::getY() const {
-    return y;
-}
-
-float Vec3::getZ() const {
-    return x;
-}
-
-void Vec3::setX(const float x) {
-    this->x = x;
-}
-
-void Vec3::setY(const float y) {
-    this->y = y;
-}
-
-void Vec3::setZ(const float z) {
-    this->z = z;
-}
-
 Vec3 Vec3::operator -() const {
     return Vec3(-x, -y, -z);
 }
@@ -125,4 +101,12 @@ Vec3 Vec3::refraction(const Vec3& n, const float etai_over_etat) {
     Vec3 r_out_perp =  etai_over_etat * ((*this) + cos_theta*n);
     Vec3 r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.length_squared())) * n;
     return r_out_perp + r_out_parallel;
+}
+
+std::uint32_t Vec3::toABGR() const {
+    std::uint8_t r255 = x * 255.999999;
+    std::uint8_t g255 = y * 255.999999;
+    std::uint8_t b255 = z * 255.999999;
+
+    return 0xff000000 | r255 | (g255 << 8) | (b255 << 16);
 }

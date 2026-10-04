@@ -2,7 +2,6 @@
 
 #include <random>
 #include "math/Vec3.h"
-#include "math/Color.h"
 
 class RNG {
 private:
