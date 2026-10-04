@@ -15,7 +15,7 @@ Dielectric::Dielectric(Texture* texture, float ior):
     ior(ior) {}
 
 bool Dielectric::scatter(Ray& ray, Color& attenuation, const HitInfo& rec) const {
-    Vec3 dir = ray.getDirection().normalized();
+    Vec3 dir = ray.direction.normalized();
 
     float env_ior = 1.0; // TODO: move this into scene defs
     float ior_ratio = env_ior / ior;
@@ -28,11 +28,11 @@ bool Dielectric::scatter(Ray& ray, Color& attenuation, const HitInfo& rec) const
     bool cannot_refract = ior_ratio * ior_ratio * (1.0 - cos_theta * cos_theta) > 1.0;
 
     if((cannot_refract or should_reflect) and !fequal(ior_ratio, 1.0f)) {
-        ray.setDirection(dir.reflection(rec.normal));
-        ray.setOrigin(rec.hit_point + rec.normal * 0.001f);
+        ray.direction = dir.reflection(rec.normal);
+        ray.origin = rec.hit_point + rec.normal * 0.001f;
     } else {
-        ray.setDirection(dir.refraction(rec.normal, ior_ratio));
-        ray.setOrigin(rec.hit_point - rec.normal * 0.001f);
+        ray.direction = dir.refraction(rec.normal, ior_ratio);
+        ray.origin = rec.hit_point - rec.normal * 0.001f;
     }
 
     attenuation = texture->get(rec);

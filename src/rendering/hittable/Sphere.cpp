@@ -14,10 +14,10 @@ Sphere::Sphere(
 HitInfo Sphere::hit(const Ray& ray) const {
     HitInfo info;
 
-    Vec3 offset_origin = ray.getOrigin() - center;
+    Vec3 offset_origin = ray.origin - center;
 
-    float a = ray.getDirection().length_squared();
-    float half_b = -offset_origin.dot(ray.getDirection());
+    float a = ray.direction.length_squared();
+    float half_b = -offset_origin.dot(ray.direction);
     float c = offset_origin.length_squared() - radius * radius;
 
     float discriminant = half_b * half_b - a * c;
@@ -46,7 +46,7 @@ HitInfo Sphere::hit(const Ray& ray) const {
     info.hit_point = ray.point(dist);
 
     Vec3 outward_normal = (info.hit_point - center) / radius;
-    info.front_face = ray.getDirection().dot(outward_normal) < 0;
+    info.front_face = ray.direction.dot(outward_normal) < 0;
 
     if(info.front_face)
         info.normal = outward_normal;

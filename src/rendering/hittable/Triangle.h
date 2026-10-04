@@ -2,7 +2,6 @@
  
 #include "Hittable.h"
  
- 
 class Triangle : public Hittable {
 private:
     Vec3 v0, v1, v2;

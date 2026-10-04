@@ -21,7 +21,7 @@ HitInfo Triangle::hit(const Ray& ray) const {
     Vec3 edge1 = v1 - v0;
     Vec3 edge2 = v2 - v0;
 
-    Vec3 pvec = ray.getDirection().cross(edge2);
+    Vec3 pvec = ray.direction.cross(edge2);
     float det = edge1.dot(pvec);
 
     if (std::fabs(det) < epsilon){
@@ -30,7 +30,7 @@ HitInfo Triangle::hit(const Ray& ray) const {
 
     float invDet = 1.0 / det;
 
-    Vec3 tvec = ray.getOrigin() - v0;
+    Vec3 tvec = ray.origin - v0;
 
     float u = tvec.dot(pvec) * invDet;
     if (u < 0.0 || u > 1.0){
@@ -39,7 +39,7 @@ HitInfo Triangle::hit(const Ray& ray) const {
 
     Vec3 qvec = tvec.cross(edge1);
 
-    float v = ray.getDirection().dot(qvec) * invDet;
+    float v = ray.direction.dot(qvec) * invDet;
     if (v < 0.0 || u + v > 1.0){
         return info;
     }
@@ -59,7 +59,7 @@ HitInfo Triangle::hit(const Ray& ray) const {
         outward_normal = outward_normal * -1;
 
     info.front_face =
-        ray.getDirection().dot(outward_normal) < 0;
+        ray.direction.dot(outward_normal) < 0;
 
     if (info.front_face)
         info.normal = outward_normal;

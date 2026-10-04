@@ -30,7 +30,7 @@ const Color RayTracer::trace(Ray ray) const {
         HitInfo rec = scene.get_closest(ray);
         if(!DID_HIT(rec)) {
             // TODO: impl SkyBox class
-            float cosine = ray.getDirection().dot(Vec3(0, 1, 0));
+            float cosine = ray.direction.dot(Vec3(0, 1, 0));
             float interpolate = (cosine + 1) / 2;
             Color sky_color = Vec3(0.98, 0.98, 0.98).lerp(Vec3(0.83, 0.95, 1.0), interpolate);
             final_color += throughput * sky_color;
@@ -51,9 +51,9 @@ const Color RayTracer::trace(Ray ray) const {
             // randomly kill rays. rays with higher throughput
             // is less likely to be killed
             float max_channel = std::max({
-                throughput.getX(),
-                throughput.getY(),
-                throughput.getZ()
+                throughput.x,
+                throughput.y,
+                throughput.z
             });
             if (RNG::uniform() > max_channel) {
                 break;

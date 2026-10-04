@@ -1,7 +1,6 @@
 #pragma once
 
 #include "math/Ray.h"
-#include "math/Color.h"
 #include "Texture.h"
 #include "HitInfo.h"
 

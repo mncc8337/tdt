@@ -1,22 +1,17 @@
 #pragma once
 
-class Vec3{
-protected:
-    float x, y, z;
+#include <cstdint>
 
-public:
-
-    //tao vt
+struct Vec3 {
     Vec3();
     Vec3(float x, float y, float z);
 
-    float getX() const;
-    float getY() const;
-    float getZ() const;
-
-    void setX(const float x);
-    void setY(const float y);
-    void setZ(const float z);
+    union {
+        struct {
+            float x, y, z;
+        };
+        float axis[3];
+    };
 
     Vec3 operator -() const;
 
@@ -50,4 +45,8 @@ public:
 
     Vec3 reflection(const Vec3& n) const;
     Vec3 refraction(const Vec3& n, const float etai_over_etat);
+
+    std::uint32_t toABGR() const;
 };
+
+using Color = Vec3;
