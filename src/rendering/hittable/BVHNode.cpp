@@ -1,4 +1,5 @@
 #include "BVHNode.h"
+#include "misc/floatcmp.h"
 #include <algorithm>
 
 #include "BVHNode.h"
@@ -55,7 +56,7 @@ BVHNode::BVHNode(std::vector<Hittable*>& src_objects, size_t start, size_t end) 
 HitInfo BVHNode::hit(const Ray& ray) const {
     HitInfo rec;
 
-    if(!aabb.hit(ray, 0.001f, 1e9f)) { 
+    if(!aabb.hit(ray, EPSILON, FAR_DISTANCE)) { 
         return rec; 
     }
 

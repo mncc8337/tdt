@@ -8,15 +8,31 @@ RawTriangle::RawTriangle(
 ):
     v0(v0),
     v1(v1),
-    v2(v2) {}
+    v2(v2),
+    uv0(Vec2(0)),
+    uv1(Vec2(0)),
+    uv2(Vec2(0)) {}
+
+RawTriangle::RawTriangle(
+    const Vec3& v0,
+    const Vec3& v1,
+    const Vec3& v2,
+    const Vec2& uv0,
+    const Vec2& uv1,
+    const Vec2& uv2
+):
+    v0(v0),
+    v1(v1),
+    v2(v2),
+    uv0(uv0),
+    uv1(uv1),
+    uv2(uv2) {}
 
 bool RawTriangle::hit(
     const Ray& ray, 
     float t_min, 
     float t_max, 
-    float& t, 
-    float& u, 
-    float& v
+    Vec3& tuv
 ) const {
     Vec3 edge1 = v1 - v0;
     Vec3 edge2 = v2 - v0;
@@ -25,6 +41,10 @@ bool RawTriangle::hit(
     float det = edge1.dot(pvec);
 
     if (fequal0(det)) return false;
+
+    float& t = tuv.x;
+    float& u = tuv.y;
+    float& v = tuv.z;
 
     float inv_det = 1.0f / det;
     Vec3 tvec = ray.origin - v0;

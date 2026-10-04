@@ -1,6 +1,7 @@
 target_sources(tdt
   PRIVATE
     Vec3.cpp
+    Vec2.cpp
     Ray.cpp
     AABB.cpp
     RawTriangle.cpp

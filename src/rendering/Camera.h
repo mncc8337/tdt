@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vec3.h"
+#include "Vec2.h"
 #include "Ray.h"
 
 class Camera {
@@ -9,12 +10,15 @@ private:
 
     Vec3 position;
     Vec3 lookat;
+    Vec3 w, u, v;
+
+    void compute_orientation();
 
 public:
     Camera(
         float focal_length,
         Vec3 position,
-        Vec3 direction
+        Vec3 lookat
     );
 
     const float& getFocalLength() const;
@@ -26,5 +30,7 @@ public:
     const Vec3& getDirection() const;
     void setDirection(const Vec3 new_dir);
 
-    const Ray getRayAt(float px, float py) const;
+    void lookAt(const Vec3& v);
+
+    const Ray getRayAt(Vec2 uv) const;
 };

@@ -1,4 +1,5 @@
 #include "Triangle.h"
+#include "misc/floatcmp.h"
 
 Triangle::Triangle(
     Material* material,
@@ -12,26 +13,29 @@ Triangle::Triangle(
 HitInfo Triangle::hit(const Ray& ray) const {
     HitInfo info;
 
-    float t, u, v;
-    
-    if(!triangle.hit(ray, 0.001f, 1e9f, t, u, v)) {
+    Vec3 tuv;
+    if(!triangle.hit(ray, EPSILON, FAR_DISTANCE, tuv)) {
         return info;
     }
 
-    info.distance = t;
-    info.hit_point = ray.point(t);
+    info.distance = tuv.x;
+    info.hit_point = ray.point(tuv.x);
 
     Vec3 edge1 = triangle.v1 - triangle.v0;
     Vec3 edge2 = triangle.v2 - triangle.v0;
     Vec3 outward_normal = edge1.cross(edge2).normalized();
 
     info.front_face = ray.direction.dot(outward_normal) < 0.0f;
-    info.normal = info.front_face ? outward_normal : outward_normal * -1.0f;
+    info.normal = info.front_face ? outward_normal : -outward_normal;
 
     info.material = material;
 
-    // info.u = u;
-    // info.v = v;
+    float u = tuv.y;
+    float v = tuv.z;
+    float w = 1.0f - u - v;
+
+    info.uv.x = w * triangle.uv0.x + u * triangle.uv1.x + v * triangle.uv2.x;
+    info.uv.y = w * triangle.uv0.y + u * triangle.uv1.y + v * triangle.uv2.y;
 
     return info;
 }

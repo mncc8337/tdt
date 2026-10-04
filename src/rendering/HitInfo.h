@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math/Vec3.h"
+#include "math/Vec2.h"
 
 #define DID_HIT(rec) ((rec).distance > 0.0)
 
@@ -12,5 +13,5 @@ struct HitInfo {
     Vec3 normal;
     const Material* material = nullptr;
     bool front_face;
-    float uvx, uvy;
+    Vec2 uv;
 };
