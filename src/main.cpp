@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/System/Time.hpp>
 
+#include <iostream>
 #include <atomic>
 #include <memory>
 #include <thread>
@@ -24,17 +25,22 @@ std::atomic<bool> is_data_ready{false};
 
 unsigned pass = 0;
 
+float total_time = 0;
+
 void render_routine(RayTracer* tracer) {
     while(!is_running) std::this_thread::yield();
 
+    sf::Clock delta_clock;
     while(is_running) {
-        if (!is_data_ready) {
-            tracer->render(pass++);
-            is_data_ready = true;
-        } else {
-            std::this_thread::yield(); 
-        }
+        tracer->render(pass++);
+        sf::Time time_elapsed = delta_clock.restart();
+        is_data_ready = true;
+        float dt = time_elapsed.asMilliseconds();
+        std::clog << "#" << pass << " dt: " << dt << "ms" << '\n';
+        total_time += dt;
     }
+
+    std::clog << "mean: " << total_time / pass << std::endl;
 }
 
 int main() {
