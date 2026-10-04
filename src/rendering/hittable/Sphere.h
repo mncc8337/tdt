@@ -14,5 +14,8 @@ public:
         const Vec3& center,
         float radius
     );
+
     HitInfo hit(const Ray& ray) const override;
+
+    AABB getAABB() const override;
 };

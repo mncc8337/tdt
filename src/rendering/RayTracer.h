@@ -20,7 +20,12 @@ private:
     std::vector<std::uint32_t> pixels;
 
 public:
-    RayTracer(unsigned viewport_width, unsigned viewport_height, Camera& camera, Scene& scene);
+    RayTracer(
+        unsigned viewport_width,
+        unsigned viewport_height,
+        Camera& camera,
+        Scene& scene
+    );
 
     const std::uint8_t* getData() const;
 

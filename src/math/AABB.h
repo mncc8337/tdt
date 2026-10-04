@@ -1,9 +1,12 @@
 #pragma once
 
 #include "Vec3.h"
+#include "Ray.h"
+#include <vector>
 
 struct AABB {
-    AABB(Vec3 p);
+    AABB(const Vec3 p);
+    AABB(const std::vector<Vec3> points);
 
     Vec3 minp;
     Vec3 maxp;
@@ -11,6 +14,8 @@ struct AABB {
 
     void extend(const Vec3& p);
     void extend(const AABB& aabb);
+
+    bool hit(const Ray& ray, float tmin, float tmax) const;
 
     AABB operator +(const Vec3& p);
     AABB operator +(const AABB& aabb);

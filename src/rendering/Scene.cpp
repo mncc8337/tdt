@@ -2,7 +2,9 @@
 
 Hittable& Scene::add_object(std::unique_ptr<Hittable> object) {
     objects.push_back(std::move(object));
-    return *objects.back().get();
+    Hittable* obj = objects.back().get();
+    object_ptrs.push_back(obj);
+    return *obj;
 }
 
 Material& Scene::add_material(std::unique_ptr<Material> material) {
@@ -16,16 +18,9 @@ Texture& Scene::add_texture(std::unique_ptr<Texture> texture) {
 }
 
 HitInfo Scene::get_closest(const Ray& ray) const {
-    HitInfo min_rec;
-    float min_dist = 3.042e38;
+    return bvh_root->hit(ray);
+}
 
-    for(const std::unique_ptr<Hittable>& object: objects) {
-        HitInfo rec = object->hit(ray);
-        if(DID_HIT(rec) and rec.distance < min_dist) {
-            min_rec = rec;
-            min_dist = rec.distance;
-        }
-    }
-
-    return min_rec;
+void Scene::build_bvh() {
+    bvh_root = std::make_unique<BVHNode>(object_ptrs, 0, object_ptrs.size());
 }

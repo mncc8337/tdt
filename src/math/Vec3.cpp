@@ -2,8 +2,16 @@
 
 #include <cmath>
 
-Vec3::Vec3() : x(0), y(0), z(0) {}
+Vec3::Vec3(float t) : x(t), y(t), z(t) {}
 Vec3::Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
+
+float& Vec3::operator [](const unsigned a) {
+    return axis[a];
+}
+
+const float& Vec3::operator [](const unsigned a) const {
+    return axis[a];
+}
 
 Vec3 Vec3::operator -() const {
     return Vec3(-x, -y, -z);
@@ -89,24 +97,24 @@ Vec3 Vec3::normalize() {
 }
 
 Vec3 Vec3::lerp(const Vec3& v, const float t) const {
-    return (1.0 - t) * (*this) + v * t;
+    return (*this) * (1.0f - t) + v * t;
 }
 
 Vec3 Vec3::reflection(const Vec3& n) const {
-    return (*this) - 2 * (*this).dot(n) * n;
+    return (*this) - n * (*this).dot(n) * 2.0f;
 }
 
 Vec3 Vec3::refraction(const Vec3& n, const float etai_over_etat) {
-    float cos_theta = std::fmin(-(*this).dot(n), 1.0);
-    Vec3 r_out_perp =  etai_over_etat * ((*this) + cos_theta*n);
-    Vec3 r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.length_squared())) * n;
+    float cos_theta = std::fmin(-(*this).dot(n), 1.0f);
+    Vec3 r_out_perp =  ((*this) + n * cos_theta) * etai_over_etat;
+    Vec3 r_out_parallel = -n * sqrt(fabs(1.0f - r_out_perp.length_squared()));
     return r_out_perp + r_out_parallel;
 }
 
 std::uint32_t Vec3::toABGR() const {
-    std::uint8_t r255 = x * 255.999999;
-    std::uint8_t g255 = y * 255.999999;
-    std::uint8_t b255 = z * 255.999999;
+    std::uint8_t r255 = x * 255.999999f;
+    std::uint8_t g255 = y * 255.999999f;
+    std::uint8_t b255 = z * 255.999999f;
 
     return 0xff000000 | r255 | (g255 << 8) | (b255 << 16);
 }

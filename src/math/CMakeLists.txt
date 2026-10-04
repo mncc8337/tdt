@@ -3,6 +3,7 @@ target_sources(tdt
     Vec3.cpp
     Ray.cpp
     AABB.cpp
+    RawTriangle.cpp
 )
 
 target_include_directories(tdt PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

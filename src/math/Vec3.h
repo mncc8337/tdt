@@ -3,7 +3,7 @@
 #include <cstdint>
 
 struct Vec3 {
-    Vec3();
+    Vec3(float t = 0);
     Vec3(float x, float y, float z);
 
     union {
@@ -12,6 +12,9 @@ struct Vec3 {
         };
         float axis[3];
     };
+
+    float& operator [](unsigned axis);
+    const float& operator [](unsigned axis) const;
 
     Vec3 operator -() const;
 
@@ -30,7 +33,6 @@ struct Vec3 {
 
     Vec3 operator /(const float t) const;
     const Vec3& operator /=(const float t);
-
 
     float dot(const Vec3& other) const;
     Vec3 cross(const Vec3& other) const;

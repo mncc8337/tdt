@@ -4,6 +4,7 @@
 #include <memory>
 
 #include <Hittable.h>
+#include <hittable/BVHNode.h>
 
 class Scene {
 private:
@@ -11,7 +12,8 @@ private:
     std::vector<std::unique_ptr<Material>> materials;
     std::vector<std::unique_ptr<Texture>> textures;
 
-    // std::unique_ptr<BVHNode>> bvh_root;
+    std::vector<Hittable*> object_ptrs;
+    std::unique_ptr<BVHNode> bvh_root;
 
 public:
     Hittable& add_object(std::unique_ptr<Hittable> object);
@@ -25,5 +27,6 @@ public:
 
     // void save_scene(std::string path);
     // void load_scene(std::string path);
-    // void build_bvh();
+
+    void build_bvh();
 };
