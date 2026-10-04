@@ -2,6 +2,8 @@
 #include "Camera.h"
 #include "HitInfo.h"
 #include "Vec3.h"
+#include "misc/RNG.h"
+#include <algorithm>
 
 RayTracer::RayTracer(
     unsigned viewport_width,
@@ -30,7 +32,7 @@ const Color RayTracer::trace(Ray ray) const {
             // TODO: impl SkyBox class
             float cosine = ray.getDirection().dot(Vec3(0, 1, 0));
             float interpolate = (cosine + 1) / 2;
-            Color sky_color = Vec3(1, 1, 1).lerp(Vec3(0.55, 0.84, 1.0), interpolate);
+            Color sky_color = Vec3(0.98, 0.98, 0.98).lerp(Vec3(0.83, 0.95, 1.0), interpolate);
             final_color += throughput * sky_color;
             break;
         }
@@ -43,6 +45,23 @@ const Color RayTracer::trace(Ray ray) const {
             break; 
 
         throughput *= attenuation;
+
+        // russian roulette
+        if(bounces > 3) {
+            // randomly kill rays. rays with higher throughput
+            // is less likely to be killed
+            float max_channel = std::max({
+                throughput.getX(),
+                throughput.getY(),
+                throughput.getZ()
+            });
+            if (RNG::uniform() > max_channel) {
+                break;
+            }
+            // raise survivied rays' energy by the
+            // inverse of the probability of being killed
+            throughput /= max_channel; 
+        }
     }
 
     return final_color;
@@ -62,8 +81,8 @@ void RayTracer::render(unsigned pass) {
             Color new_color = trace(camera.getRayAt(px, py));
             
             Color& color = buffer[i + j * viewport_width];
-            color = (color * pass + new_color) / (pass + 1);
-            pixels[i + j * viewport_width] = color.toABGR();
+            color += new_color;
+            pixels[i + j * viewport_width] = Color(color / (pass + 1)).toABGR();
         }
     }
 }

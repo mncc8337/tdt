@@ -1,11 +1,6 @@
 #include "Sphere.h"
+#include "misc/floatcmp.h"
 #include <cmath>
-
-#define EPSILON 1e-6
-
-inline bool _equal_zero(float a) {
-    return std::abs(a) < EPSILON;
-}
 
 Sphere::Sphere(
     Material* material,

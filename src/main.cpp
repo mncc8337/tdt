@@ -5,10 +5,13 @@
 #include <memory>
 #include <thread>
 
+#include "misc/RNG.h"
 #include "RayTracer.h"
 #include "rendering/texture/ColorTexture.h"
 #include "rendering/material/Metal.h"
+#include "rendering/material/Dielectric.h"
 #include "rendering/hittable/Sphere.h"
+#include "rendering/hittable/Triangle.h"
 
 #include "imgui.h"
 #include "imgui-SFML.h"
@@ -44,16 +47,54 @@ int main() {
 
     Camera camera(
         1.0f,
-        Vec3(0, 0, 0),
+        Vec3(0, 5, 0),
         Vec3(0, 0, -1)
     );
     Scene scene;
     sf::Vector2u window_size = window.getSize();
     RayTracer rt(window_size.x, window_size.y, camera, scene);
 
-    Texture& tex = scene.add_texture(std::make_unique<ColorTexture>(Color(1, 1, 1)));
-    Material& mat = scene.add_material(std::make_unique<Metal>(&tex, 1.0));
-    scene.add_object(std::make_unique<Sphere>(&mat, Vec3(1, 0, -6), 1.0f));
+    Texture& white_tex = scene.add_texture(
+        std::make_unique<ColorTexture>(Color(1, 1, 1))
+    );
+    Material& white_metal_mat = scene.add_material(
+        std::make_unique<Metal>(&white_tex, 1.0)
+    );
+    scene.add_object(std::make_unique<Triangle>(
+        &white_metal_mat,
+        Vec3(-1000, 0, -1000),
+        Vec3(1000, 0, -1000),
+        Vec3(0, 0, 1000)
+    ));
+
+    Material& glass_mat = scene.add_material(
+        std::make_unique<Dielectric>(&white_tex, 1.52)
+    );
+
+    for(int i = 0; i < 100; i++) {
+        Texture& tex = scene.add_texture(
+            std::make_unique<ColorTexture>(RNG::color())
+        );
+        Material* mat;
+        if(RNG::uniform() < 0.7) {
+            mat = &scene.add_material(
+                std::make_unique<Metal>(&tex, RNG::uniform())
+            );
+        } else {
+            mat = &glass_mat;
+        }
+        float radius = RNG::uniform(0.5, 2);
+
+        scene.add_object(std::make_unique<Sphere>(
+            mat,
+            Vec3(
+                RNG::uniform(-50, 50),
+                radius,
+                RNG::uniform(-105, -5)
+            ),
+            radius
+        ));
+    }
 
     sf::Texture texture(window_size);
     sf::Sprite sprite(texture);

@@ -12,7 +12,7 @@ private:
     unsigned viewport_width;
     unsigned viewport_height;
 
-    unsigned max_bounces = 10;
+    unsigned max_bounces = 50;
 
     Camera& camera;
     Scene& scene;
