@@ -3,8 +3,8 @@
 
 AABB::AABB(const Vec3 p): minp(p), maxp(p), centroid(p) {}
 
-AABB::AABB(const std::vector<Vec3> points) {
-    minp = points.front();
+AABB::AABB(const std::initializer_list<Vec3> points) {
+    minp = *points.begin();
     maxp = minp;
     centroid = minp;
 

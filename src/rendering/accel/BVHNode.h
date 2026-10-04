@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <algorithm>
+#include <vector>
 #include "Hittable.h"
 #include "math/AABB.h"
 #include "math/RawTriangle.h"

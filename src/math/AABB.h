@@ -1,12 +1,12 @@
 #pragma once
 
+#include <initializer_list>
 #include "Vec3.h"
 #include "Ray.h"
-#include <vector>
 
 struct AABB {
     AABB(const Vec3 p = Vec3(0));
-    AABB(const std::vector<Vec3> points);
+    AABB(const std::initializer_list<Vec3> points);
 
     Vec3 minp;
     Vec3 maxp;

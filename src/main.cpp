@@ -6,13 +6,10 @@
 #include <memory>
 #include <thread>
 
-#include "misc/RNG.h"
 #include "RayTracer.h"
 #include "rendering/texture/ColorTexture.h"
 #include "rendering/material/Metal.h"
-#include "rendering/material/Dielectric.h"
-#include "rendering/hittable/Sphere.h"
-#include "rendering/hittable/Triangle.h"
+#include "rendering/hittable/Mesh.h"
 
 #include "imgui.h"
 #include "imgui-SFML.h"
@@ -36,11 +33,11 @@ void render_routine(RayTracer* tracer) {
         sf::Time time_elapsed = delta_clock.restart();
         is_data_ready = true;
         float dt = time_elapsed.asMilliseconds();
-        std::clog << "#" << pass << " dt: " << dt << "ms" << '\n';
+        std::clog << "\r#" << pass << " dt: " << dt << "ms   " << std::flush;
         total_time += dt;
     }
 
-    std::clog << "mean: " << total_time / pass << std::endl;
+    std::clog << "\nmean: " << total_time / pass << std::endl;
 }
 
 int main() {
@@ -53,54 +50,23 @@ int main() {
 
     Camera camera(
         1.0f,
-        Vec3(0, 5, 0),
-        Vec3(0, 0, -1)
+        Vec3(0, 0.15, 0.15),
+        Vec3(-0.01, 0.03, 0)
     );
     Scene scene;
     sf::Vector2u window_size = window.getSize();
     RayTracer rt(window_size.x, window_size.y, camera, scene);
 
-    Texture& white_tex = scene.add_texture(
-        std::make_unique<ColorTexture>(Color(1, 1, 1))
+    Texture& red_tex = scene.add_texture(
+        std::make_unique<ColorTexture>(Color(1, 0, 0))
     );
-    Material& white_metal_mat = scene.add_material(
-        std::make_unique<Metal>(&white_tex, 1.0f)
+    Material& red_metal_mat = scene.add_material(
+        std::make_unique<Metal>(&red_tex, 1.0f)
     );
-    scene.add_object(std::make_unique<Triangle>(
-        &white_metal_mat,
-        Vec3(-1000, 0, -1000),
-        Vec3(1000, 0, -1000),
-        Vec3(0, 0, 1000)
+    scene.add_object(std::make_unique<Mesh>(
+        &red_metal_mat,
+        "assets/model/stanford-bunny.obj"
     ));
-
-    Material& glass_mat = scene.add_material(
-        std::make_unique<Dielectric>(&white_tex, 1.52f)
-    );
-
-    for(int i = 0; i < 5000; i++) {
-        Texture& tex = scene.add_texture(
-            std::make_unique<ColorTexture>(RNG::color())
-        );
-        Material* mat;
-        if(RNG::uniform() < 0.7) {
-            mat = &scene.add_material(
-                std::make_unique<Metal>(&tex, RNG::uniform())
-            );
-        } else {
-            mat = &glass_mat;
-        }
-        float radius = RNG::uniform(0.5f, 2);
-
-        scene.add_object(std::make_unique<Sphere>(
-            mat,
-            Vec3(
-                RNG::uniform(-50, 50),
-                radius,
-                RNG::uniform(-105, -5)
-            ),
-            radius
-        ));
-    }
 
     scene.build_bvh();
 
@@ -125,12 +91,6 @@ int main() {
         if(!window.isOpen()) {
             break;
         }
-
-        if(pass >= 100) {
-            window.close();
-            break;
-        }
-
 
         if(is_data_ready) {
             texture.update(rt.getData());

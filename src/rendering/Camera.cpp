@@ -7,14 +7,21 @@ Camera::Camera(
 ):
     focal_length(focal_length),
     position(position),
-    lookat(lookat) {}
+    lookat(lookat) {
+    compute_orientation();
+}
 
-const Ray Camera::getRayAt(float px, float py) const {
-    // TODO: rotate ray_direction according to camera.lookat
-    Vec3 ray_direction = Vec3(px, py, -focal_length);
-    ray_direction.normalize();
+void Camera::compute_orientation() {
+    w = (lookat - position).normalized();
+    u = Vec3(0, 1, 0).cross(w);
+    v = w.cross(u);
+}
 
-    return Ray(position, ray_direction);
+const Ray Camera::getRayAt(Vec2 uv) const {
+    Ray ray;
+    ray.origin = position;
+    ray.direction = focal_length * w + uv.x * u + uv.y * v;
+    return ray;
 }
 
 const float& Camera::getFocalLength() const {
@@ -38,5 +45,11 @@ const Vec3& Camera::getDirection() const {
 }
 
 void Camera::setDirection(const Vec3 new_dir) {
-    lookat = new_dir;
+    lookat = position + new_dir;
+    compute_orientation();
+}
+
+void Camera::lookAt(const Vec3& v) {
+    lookat = v;
+    compute_orientation();
 }

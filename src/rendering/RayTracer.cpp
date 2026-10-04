@@ -23,8 +23,8 @@ const std::uint8_t* RayTracer::getData() const {
 }
 
 const Color RayTracer::trace(Ray ray) const {
-    Color final_color(0, 0, 0);
-    Color throughput(1, 1, 1);
+    Color final_color(0);
+    Color throughput(1);
 
     for(unsigned bounces = 0; bounces < max_bounces; bounces++) {
         HitInfo rec = scene.get_closest(ray);
@@ -37,7 +37,7 @@ const Color RayTracer::trace(Ray ray) const {
             break;
         }
 
-        Color emitted = rec.material->emitted(rec.uvx, rec.uvy, rec.hit_point);
+        Color emitted = rec.material->emitted(rec.uv, rec.hit_point);
         final_color += throughput * emitted;
 
         Color attenuation;
@@ -79,7 +79,7 @@ void RayTracer::render(unsigned pass) {
 
             float px = u * viewport_w;
             float py = -v * viewport_h;
-            Color new_color = trace(camera.getRayAt(px, py));
+            Color new_color = trace(camera.getRayAt(Vec2(px, py)));
             
             Color& color = buffer[i + j * viewport_width];
             color += new_color;

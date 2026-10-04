@@ -1,4 +1,5 @@
 #include "Scene.h"
+#include "misc/floatcmp.h"
 
 Hittable& Scene::add_object(std::unique_ptr<Hittable> object) {
     objects.push_back(std::move(object));
@@ -28,7 +29,7 @@ HitInfo Scene::get_closest(const Ray& ray) const {
     while(true) {
         const LinearBVHNode& node = flat_bvh[current_node_index];
 
-        if(node.aabb.hit(ray, 0.001f, DID_HIT(closest_hit) ? closest_hit.distance : 1e9f)) {
+        if(node.aabb.hit(ray, EPSILON, DID_HIT(closest_hit) ? closest_hit.distance : FAR_DISTANCE)) {
             if(node.num_objects > 0) {
                 for (int i = 0; i < node.num_objects; ++i) {
                     HitInfo temp_hit = objects[node.primitives_offset + i]->hit(ray);

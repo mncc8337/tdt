@@ -18,8 +18,7 @@ public:
     ) const = 0;
 
     virtual Color emitted(
-        const float uvx,
-        const float uvy,
+        const Vec2 uv,
         const Vec3 hit_point
     ) const;
 };

@@ -29,10 +29,10 @@ bool Dielectric::scatter(Ray& ray, Color& attenuation, const HitInfo& rec) const
 
     if((cannot_refract or should_reflect) and !fequal(ior_ratio, 1.0f)) {
         ray.direction = dir.reflection(rec.normal);
-        ray.origin = rec.hit_point + rec.normal * 0.001f;
+        ray.origin = rec.hit_point + rec.normal * RAY_ORIGIN_OFFSET;
     } else {
         ray.direction = dir.refraction(rec.normal, ior_ratio);
-        ray.origin = rec.hit_point - rec.normal * 0.001f;
+        ray.origin = rec.hit_point - rec.normal * RAY_ORIGIN_OFFSET;
     }
 
     attenuation = texture->get(rec);
