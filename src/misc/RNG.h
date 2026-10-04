@@ -2,6 +2,7 @@
 
 #include <random>
 #include "math/Vec3.h"
+#include "math/Color.h"
 
 class RNG {
 private:
@@ -11,7 +12,9 @@ private:
 
 public:
     static float uniform();
+    static float uniform(float from, float to);
     static float normal();
     static Vec3 direction_unnormalized();
     static Vec3 direction_normalized();
+    static Color color();
 };

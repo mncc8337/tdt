@@ -48,5 +48,6 @@ public:
 
     Vec3 lerp(const Vec3& v, const float t) const;
 
-    Vec3 reflection(Vec3 n) const;
+    Vec3 reflection(const Vec3& n) const;
+    Vec3 refraction(const Vec3& n, const float etai_over_etat);
 };

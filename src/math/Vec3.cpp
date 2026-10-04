@@ -117,6 +117,13 @@ Vec3 Vec3::lerp(const Vec3& v, const float t) const {
     return (1.0 - t) * (*this) + v * t;
 }
 
-Vec3 Vec3::reflection(Vec3 n) const {
+Vec3 Vec3::reflection(const Vec3& n) const {
     return (*this) - 2 * (*this).dot(n) * n;
+}
+
+Vec3 Vec3::refraction(const Vec3& n, const float etai_over_etat) {
+    float cos_theta = std::fmin(-(*this).dot(n), 1.0);
+    Vec3 r_out_perp =  etai_over_etat * ((*this) + cos_theta*n);
+    Vec3 r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.length_squared())) * n;
+    return r_out_perp + r_out_parallel;
 }

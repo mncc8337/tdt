@@ -8,6 +8,10 @@ float RNG::uniform() {
     return uniform_dist(generator);
 }
 
+float RNG::uniform(float from, float to) {
+    return uniform_dist(generator) * (to - from) + from;
+}
+
 float RNG::normal() {
     return normal_dist(generator);
 }
@@ -18,4 +22,8 @@ Vec3 RNG::direction_unnormalized() {
 
 Vec3 RNG::direction_normalized() {
     return direction_unnormalized().normalized();
+}
+
+Color RNG::color() {
+    return Vec3(uniform(), uniform(), uniform());
 }
