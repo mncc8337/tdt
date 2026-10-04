@@ -57,3 +57,7 @@ HitInfo Sphere::hit(const Ray& ray) const {
 
     return info;
 }
+
+AABB Sphere::getAABB() const {
+    return AABB({center + Vec3(radius), center - Vec3(radius)});
+}

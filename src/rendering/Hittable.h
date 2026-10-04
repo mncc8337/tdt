@@ -3,6 +3,7 @@
 #include "math/Ray.h"
 #include "Material.h"
 #include "HitInfo.h"
+#include "math/AABB.h"
 
 class Hittable{
 protected:
@@ -12,4 +13,5 @@ protected:
 public:
     Hittable(Material* material);
     virtual HitInfo hit(const Ray& ray) const = 0;
+    virtual AABB getAABB() const = 0;
 };

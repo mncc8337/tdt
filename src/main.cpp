@@ -102,6 +102,8 @@ int main() {
         ));
     }
 
+    scene.build_bvh();
+
     sf::Texture texture(window_size);
     sf::Sprite sprite(texture);
 

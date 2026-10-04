@@ -1,11 +1,11 @@
 #pragma once
  
 #include "Hittable.h"
+#include "math/RawTriangle.h"
  
 class Triangle : public Hittable {
 private:
-    Vec3 v0, v1, v2;
-
+    RawTriangle triangle;
 public:
     Triangle(
         Material* material,
@@ -15,4 +15,6 @@ public:
     );
 
     HitInfo hit(const Ray& ray) const override;
+
+    AABB getAABB() const override;
 };
