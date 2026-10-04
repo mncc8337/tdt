@@ -12,6 +12,7 @@ protected:
 
 public:
     Hittable(Material* material);
+    virtual ~Hittable();
     virtual HitInfo hit(const Ray& ray) const = 0;
     virtual AABB getAABB() const = 0;
 };

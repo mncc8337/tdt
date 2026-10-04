@@ -1,7 +1,7 @@
 #include "AABB.h"
 #include <algorithm>
 
-AABB::AABB(Vec3 p): minp(p), maxp(p), centroid(p) {}
+AABB::AABB(const Vec3 p): minp(p), maxp(p), centroid(p) {}
 
 AABB::AABB(const std::vector<Vec3> points) {
     minp = points.front();

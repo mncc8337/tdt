@@ -3,8 +3,8 @@
 #include <vector>
 #include <memory>
 
-#include <Hittable.h>
-#include <hittable/BVHNode.h>
+#include "Hittable.h"
+#include "accel/BVHNode.h"
 
 class Scene {
 private:
@@ -12,8 +12,9 @@ private:
     std::vector<std::unique_ptr<Material>> materials;
     std::vector<std::unique_ptr<Texture>> textures;
 
-    std::vector<Hittable*> object_ptrs;
-    std::unique_ptr<BVHNode> bvh_root;
+    std::vector<LinearBVHNode> flat_bvh;
+
+    int flatten_bvh_tree(BVHNode* node, int& offset);
 
 public:
     Hittable& add_object(std::unique_ptr<Hittable> object);
