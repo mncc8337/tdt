@@ -103,13 +103,12 @@ float Vec3::length() const {
 }
 
 Vec3 Vec3::normalized() const {
-    double len = length();
+    float len = length();
     return *this / len;
 }
 
 Vec3 Vec3::normalize() {
-    double len = length();
-    *this = *this / len;
+    *this = *this / length();
     return *this;
 }
 

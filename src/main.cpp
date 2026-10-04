@@ -64,7 +64,7 @@ int main() {
         std::make_unique<ColorTexture>(Color(1, 1, 1))
     );
     Material& white_metal_mat = scene.add_material(
-        std::make_unique<Metal>(&white_tex, 1.0)
+        std::make_unique<Metal>(&white_tex, 1.0f)
     );
     scene.add_object(std::make_unique<Triangle>(
         &white_metal_mat,
@@ -74,10 +74,10 @@ int main() {
     ));
 
     Material& glass_mat = scene.add_material(
-        std::make_unique<Dielectric>(&white_tex, 1.52)
+        std::make_unique<Dielectric>(&white_tex, 1.52f)
     );
 
-    for(int i = 0; i < 100; i++) {
+    for(int i = 0; i < 300; i++) {
         Texture& tex = scene.add_texture(
             std::make_unique<ColorTexture>(RNG::color())
         );
@@ -89,7 +89,7 @@ int main() {
         } else {
             mat = &glass_mat;
         }
-        float radius = RNG::uniform(0.5, 2);
+        float radius = RNG::uniform(0.5f, 2);
 
         scene.add_object(std::make_unique<Sphere>(
             mat,

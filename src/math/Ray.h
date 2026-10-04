@@ -16,5 +16,5 @@ public:
     const Vec3& getDirection() const;
     void setDirection(const Vec3 new_dir);
 
-    Vec3 point(const double distance) const;
+    Vec3 point(const float distance) const;
 };
