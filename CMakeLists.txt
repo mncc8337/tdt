@@ -8,6 +8,8 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
 endif()
 
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -flto")
+
 include(FetchContent)
 
 FetchContent_Declare(sfml
@@ -41,13 +43,18 @@ option(IMGUI_SFML_IMGUI_DEMO "Build imgui_demo.cpp" ON)
 
 FetchContent_MakeAvailable(imgui-sfml)
 
+find_package(OpenMP REQUIRED)
+
 add_executable(tdt)
 
 target_compile_features(tdt PRIVATE cxx_std_20)
 
 target_link_libraries(tdt
-    PRIVATE SFML::Graphics
-    PUBLIC ImGui-SFML::ImGui-SFML
+    PRIVATE
+      SFML::Graphics
+      OpenMP::OpenMP_CXX
+    PUBLIC
+      ImGui-SFML::ImGui-SFML
 )
 
 target_include_directories(tdt PRIVATE src)

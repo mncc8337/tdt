@@ -71,6 +71,7 @@ void RayTracer::render(unsigned pass) {
     float viewport_h = 2.0f; 
     float viewport_w = viewport_h * ((float)viewport_width / viewport_height);
 
+    #pragma omp parallel for schedule(dynamic, 1)
     for(unsigned j = 0; j < viewport_height; j++) {
         for(unsigned i = 0; i < viewport_width; i++) {
             float u = (i - viewport_width / 2.0f) / viewport_width;

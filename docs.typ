@@ -72,7 +72,7 @@
 
 = Thư viện sử dụng
 - Thư viện đồ họa SFML kết hợp với thư viện giao diện người dùng ImGUI
-- Thư viện đa luồng `std::thread` có sẵn của C++11
+- Thư viện đa luồng OpenMP
 - Thư viện mảng động `std::vector` có sẵn của C++
 - Thư viện sinh số ngẫu nhiên `std::random` có sẵn của C++11
 - Thư viện quản lý bộ nhớ thông minh `std::memory` có sẵn của C++11
