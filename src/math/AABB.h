@@ -5,7 +5,7 @@
 #include <vector>
 
 struct AABB {
-    AABB(const Vec3 p);
+    AABB(const Vec3 p = Vec3(0));
     AABB(const std::vector<Vec3> points);
 
     Vec3 minp;

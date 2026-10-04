@@ -2,3 +2,5 @@
 
 Hittable::Hittable(Material* material):
     material(material) {}
+
+Hittable::~Hittable() {}
