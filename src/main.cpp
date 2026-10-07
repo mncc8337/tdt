@@ -11,6 +11,7 @@
 #include "rendering/material/Metal.h"
 #include "rendering/material/Matte.h"
 #include "rendering/material/Dielectric.h"
+#include "rendering/material/Light.h"
 #include "rendering/hittable/Mesh.h"
 #include "rendering/hittable/Triangle.h"
 #include "rendering/hittable/Sphere.h"
@@ -81,6 +82,9 @@ int main() {
     Material& white_dielec_mat = scene.add_material(
         std::make_unique<Dielectric>(&white_tex, 1.52f)
     );
+    Material& white_light_mat = scene.add_material(
+        std::make_unique<Light>(&white_tex, 32.0f, Color(1))
+    );
 
     Hittable& platform = scene.add_object(std::make_unique<Triangle>(
         &gray_matte_mat,
@@ -99,6 +103,12 @@ int main() {
         &white_dielec_mat,
         Vec3(1.2, 1, 4.4),
         1
+    ));
+
+    Hittable& light_sphere = scene.add_object(std::make_unique<Sphere>(
+        &white_light_mat,
+        Vec3(1.2, 5, 4.4),
+        2
     ));
 
     Hittable& dodecahedron = scene.add_object(std::make_unique<Mesh>(
