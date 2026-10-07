@@ -1,9 +1,8 @@
 #include "RayTracer.h"
 #include "Camera.h"
 #include "HitInfo.h"
-#include "Vec3.h"
 #include "misc/RNG.h"
-#include <algorithm>
+#include "PostProcessing.h"
 
 RayTracer::RayTracer(
     unsigned viewport_width,
@@ -30,10 +29,10 @@ const Color RayTracer::trace(Ray ray) const {
         HitInfo rec = scene.get_closest(ray);
         if(!DID_HIT(rec)) {
             // TODO: impl SkyBox class
-            float cosine = ray.direction.dot(Vec3(0, 1, 0));
-            float interpolate = (cosine + 1) / 2;
-            Color sky_color = Vec3(0.98, 0.98, 0.98).lerp(Vec3(0.83, 0.95, 1.0), interpolate);
-            final_color += throughput * sky_color;
+            // float cosine = ray.direction.dot(Vec3(0, 1, 0));
+            // float interpolate = (cosine + 1) / 2;
+            // Color sky_color = Vec3(0.98, 0.98, 0.98).lerp(Vec3(0.83, 0.95, 1.0), interpolate);
+            // final_color += throughput * sky_color;
             break;
         }
 
@@ -83,7 +82,10 @@ void RayTracer::render(unsigned pass) {
             
             Color& color = buffer[i + j * viewport_width];
             color += new_color;
-            pixels[i + j * viewport_width] = Color(color / (pass + 1)).toABGR();
+
+            Color display = color / (pass + 1);
+            gamma_correct(reihard_tonemap(display), 2.2f);
+            pixels[i + j * viewport_width] = display.toABGR();
         }
     }
 }
