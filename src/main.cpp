@@ -1,5 +1,3 @@
-#include <memory>
-
 #include "gui/Gui.h"
 #include "rendering/Camera.h"
 #include "rendering/Scene.h"
@@ -78,7 +76,7 @@ int main() {
         &white_dielec_mat,
         "assets/model/dodecahedron.obj"
     ));
-    dodecahedron.getTransform().rotate(Vec3(M_PIf, 0, 0)).move(Vec3(-3, 1.5, 2.0));
+    dodecahedron.getTransform().rotate(Vec3(0, 0, 0)).move(Vec3(-3, 1.5, 2.0));
 
     scene.buildBVH();
 
