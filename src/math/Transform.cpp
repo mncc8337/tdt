@@ -25,6 +25,7 @@ Vec3 Transform::normalApply(const Vec3& n) const {
 }
 
 Transform& Transform::rotate(const Vec3 angles) {
+    rotation_angles = angles;
     rotation = Mat3x3::rotateX(angles.x) *
              Mat3x3::rotateY(angles.y) *
              Mat3x3::rotateZ(angles.z);

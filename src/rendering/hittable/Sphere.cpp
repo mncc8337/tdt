@@ -3,11 +3,12 @@
 #include <cmath>
 
 Sphere::Sphere(
+    const std::string name,
     Material* material,
     const Vec3& center,
     float radius
 ):
-    Hittable(material),
+    Hittable(name, material),
     center(center),
     radius(radius) {}
 
@@ -67,4 +68,8 @@ HitInfo Sphere::hit(const Ray& ray) const {
 
 AABB Sphere::getLocalAABB() const {
     return AABB({center + Vec3(radius), center - Vec3(radius)});
+}
+
+float& Sphere::getRadius() {
+    return radius;
 }

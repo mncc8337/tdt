@@ -17,19 +17,28 @@ void Camera::computeOrientation() {
     v = w.cross(u);
 }
 
-const Ray Camera::getRayAt(Vec2 uv) const {
+Ray Camera::getRayAt(Vec2 uv) const {
     Ray ray;
     ray.origin = position;
     ray.direction = focal_length * w + uv.x * u + uv.y * v;
+    ray.direction.normalize();
     return ray;
+}
+
+float& Camera::getFocalLength() {
+    return focal_length;
 }
 
 const float& Camera::getFocalLength() const {
     return focal_length;
 }
 
-void Camera::getFocalLength(const float new_fl) {
-    focal_length = new_fl;
+float& Camera::getExposure() {
+    return exposure;
+}
+
+const float& Camera::getExposure() const {
+    return exposure;
 }
 
 const Vec3& Camera::getPosition() const {

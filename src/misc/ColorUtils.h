@@ -2,7 +2,6 @@
 
 #include "math/Vec3.h"
 
-Color& clamp(Color& color);
 Color& gammaCorrect(Color& color, float gamma);
 
 // TODO: turn these into classes

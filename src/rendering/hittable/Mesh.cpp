@@ -2,14 +2,14 @@
 #include "misc/floatcmp.h"
 #include "misc/meshloader.h"
 
-Mesh::Mesh(Material* material, const std::vector<RawTriangle>& src_tris):
-    Hittable(material), tris(src_tris) {
+Mesh::Mesh(const std::string name, Material* material, const std::vector<RawTriangle>& src_tris):
+    Hittable(name, material), tris(src_tris) {
     if(tris.empty()) return;
     init_bvh();
 }
 
-Mesh::Mesh(Material* material, std::string filename):
-    Hittable(material) {
+Mesh::Mesh(const std::string name, Material* material, std::string filename):
+    Hittable(name, material) {
     loadMeshFrom(filename, tris);
     if(tris.empty()) return;
     init_bvh();

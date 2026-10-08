@@ -24,7 +24,9 @@ public:
 
     Texture& addTexture(std::unique_ptr<Texture> texture);
 
-    HitInfo getClosest(const Ray& ray) const;
+    HitInfo getClosest(const Ray& ray, Hittable*& obj) const;
+
+    const std::vector<std::unique_ptr<Hittable>>& getObjects() const;
 
     // void save_scene(std::string path);
     // void load_scene(std::string path);

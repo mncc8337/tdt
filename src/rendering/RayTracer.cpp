@@ -2,18 +2,16 @@
 #include "Camera.h"
 #include "HitInfo.h"
 #include "misc/RNG.h"
-#include "PostProcessing.h"
+#include "misc/ColorUtils.h"
+
+#include <algorithm>
 
 RayTracer::RayTracer(
     unsigned viewport_width,
-    unsigned viewport_height,
-    Camera& camera,
-    Scene& scene
+    unsigned viewport_height
 ):
     viewport_width(viewport_width),
     viewport_height(viewport_height),
-    camera(camera),
-    scene(scene),
     buffer(viewport_width * viewport_height),
     pixels(viewport_width * viewport_height) {}
 
@@ -21,22 +19,19 @@ const std::uint8_t* RayTracer::getData() const {
     return reinterpret_cast<const std::uint8_t*>(pixels.data());
 }
 
-const Color RayTracer::trace(Ray ray) const {
+const Color RayTracer::trace(Ray ray, const Scene& scene) const {
     Color final_color(0);
     Color throughput(1);
 
     for(unsigned bounces = 0; bounces < max_bounces; bounces++) {
-        HitInfo rec = scene.getClosest(ray);
-        if(!DID_HIT(rec)) {
+        Hittable* obj;
+        HitInfo rec = scene.getClosest(ray, obj);
+        if(!obj) {
             // TODO: impl SkyBox class
-            // float cosine = ray.direction.dot(Vec3(0, 1, 0));
-            // float interpolate = (cosine + 1) / 2;
-            // Color sky_color = Vec3(0.98, 0.98, 0.98).lerp(Vec3(0.83, 0.95, 1.0), interpolate);
-            // final_color += throughput * sky_color;
             break;
         }
 
-        Color emitted = rec.material->emitted(rec.uv, rec.hit_point);
+        Color emitted = rec.material->emitted(rec);
         final_color += throughput * emitted;
 
         Color attenuation;
@@ -66,9 +61,18 @@ const Color RayTracer::trace(Ray ray) const {
     return final_color;
 }
 
-void RayTracer::render(unsigned pass) {
+void RayTracer::reset() {
+    std::fill(buffer.begin(), buffer.end(), Color(0));
+    std::fill(pixels.begin(), pixels.end(), 0);
+}
+
+void RayTracer::render(const Camera& camera, const Scene& scene, unsigned pass) {
     float viewport_h = 2.0f; 
     float viewport_w = viewport_h * ((float)viewport_width / viewport_height);
+
+    // read once so every pixel of the pass uses the same exposure,
+    // a change only takes effect on the next pass
+    float exposure = camera.getExposure();
 
     #pragma omp parallel for schedule(dynamic, 1)
     for(int j = 0; j < viewport_height; j++) {
@@ -76,13 +80,12 @@ void RayTracer::render(unsigned pass) {
             float u = (i - viewport_width / 2.0f) / viewport_width;
             float v = (j - viewport_height / 2.0f) / viewport_height;
 
-            float px = u * viewport_w;
-            float py = -v * viewport_h;
-            Color new_color = trace(camera.getRayAt(Vec2(px, py)));
+            Ray ray = camera.getRayAt(Vec2(u * viewport_w, -v * viewport_h));
+            Color new_color = trace(ray, scene);
             buffer[i + j * viewport_width] += new_color;
 
             Color display = buffer[i + j * viewport_width] / (pass + 1);
-            gammaCorrect(reihardTonemap(display), 2.2f);
+            gammaCorrect(exposureTonemap(display, exposure), 2.2f);
             pixels[i + j * viewport_width] = display.toABGR();
         }
     }

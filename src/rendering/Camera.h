@@ -7,6 +7,7 @@
 class Camera {
 private:
     float focal_length;
+    float exposure = 1.0f;
 
     Vec3 position;
     Vec3 lookat;
@@ -21,8 +22,11 @@ public:
         Vec3 lookat
     );
 
+    float& getFocalLength();
     const float& getFocalLength() const;
-    void getFocalLength(const float new_fl);
+
+    float& getExposure();
+    const float& getExposure() const;
 
     const Vec3& getPosition() const;
     void setPosition(const Vec3 new_pos);
@@ -32,5 +36,5 @@ public:
 
     void lookAt(const Vec3& v);
 
-    const Ray getRayAt(Vec2 uv) const;
+    Ray getRayAt(Vec2 uv) const;
 };

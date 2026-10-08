@@ -17,8 +17,13 @@ Texture& Scene::addTexture(std::unique_ptr<Texture> texture) {
     return *textures.back().get();
 }
 
-HitInfo Scene::getClosest(const Ray& ray) const {
+const std::vector<std::unique_ptr<Hittable>>& Scene::getObjects() const {
+    return objects;
+}
+
+HitInfo Scene::getClosest(const Ray& ray, Hittable*& obj) const {
     HitInfo closest_hit;
+    obj = nullptr;
     if(flat_bvh.empty()) return closest_hit;
 
     int nodes_to_visit[64];
@@ -37,6 +42,7 @@ HitInfo Scene::getClosest(const Ray& ray) const {
                     if (DID_HIT(temp_hit)) {
                         if(!DID_HIT(closest_hit) or temp_hit.distance < closest_hit.distance) {
                             closest_hit = temp_hit;
+                            obj = objects[node.primitives_offset + i].get();
                         }
                     }
                 }

@@ -2,13 +2,14 @@
 #include "misc/floatcmp.h"
 
 Triangle::Triangle(
+    const std::string name,
     Material* material,
     const Vec3& v0,
     const Vec3& v1,
     const Vec3& v2
 ):
-    triangle(v0, v1, v2),
-    Hittable(material) {}
+    Hittable(name, material),
+    triangle(v0, v1, v2) {}
 
 HitInfo Triangle::hit(const Ray& ray) const {
     HitInfo info;

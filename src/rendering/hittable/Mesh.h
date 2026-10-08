@@ -16,8 +16,8 @@ private:
     AABB getLocalAABB() const override;
 
 public:
-    Mesh(Material* material, const std::vector<RawTriangle>& tris);
-    Mesh(Material* material, std::string filename);
+    Mesh(const std::string name, Material* material, const std::vector<RawTriangle>& tris);
+    Mesh(const std::string name, Material* material, std::string filename);
 
     HitInfo hit(const Ray& ray) const override;
 };

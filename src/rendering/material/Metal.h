@@ -9,5 +9,8 @@ private:
 public:
     Metal(Texture* texture, float roughness);
 
+    float& getRoughness();
+    const float& getRoughness() const;
+
     bool scatter(Ray& ray, Color& attenuation, const HitInfo& rec) const override;
 };

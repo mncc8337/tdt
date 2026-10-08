@@ -6,7 +6,6 @@ target_sources(tdt
     Material.cpp
     Texture.cpp
     Hittable.cpp
-    PostProcessing.cpp
     RayTracer.cpp
 )
 

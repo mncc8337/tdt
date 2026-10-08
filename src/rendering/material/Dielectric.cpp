@@ -39,3 +39,7 @@ bool Dielectric::scatter(Ray& ray, Color& attenuation, const HitInfo& rec) const
 
     return true;
 }
+
+float& Dielectric::getIor() {
+    return ior;
+}
