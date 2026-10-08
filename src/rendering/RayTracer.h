@@ -13,23 +13,21 @@ private:
 
     unsigned max_bounces = 50;
 
-    Camera& camera;
-    Scene& scene;
-
     std::vector<Color> buffer;
     std::vector<std::uint32_t> pixels;
 
 public:
     RayTracer(
         unsigned viewport_width,
-        unsigned viewport_height,
-        Camera& camera,
-        Scene& scene
+        unsigned viewport_height
     );
 
     const std::uint8_t* getData() const;
 
-    const Color trace(Ray ray) const;
+    const Color trace(Ray ray, const Scene& scene) const;
 
-    void render(unsigned pass);
+    // clears accumulated samples and starts accumulation over
+    void reset();
+
+    void render(const Camera& camera, const Scene& scene, unsigned pass);
 };

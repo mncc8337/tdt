@@ -6,6 +6,7 @@
 struct Transform {
     Vec3 scale = Vec3(1);
     Mat3x3 rotation;
+    Vec3 rotation_angles = Vec3(0);
     Vec3 translation = Vec3(0);
 
     Vec3 pointApply(const Vec3& v) const;

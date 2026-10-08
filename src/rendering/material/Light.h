@@ -10,10 +10,13 @@ private:
 public:
     Light(Texture* texture, const float emission_strength, const Color color);
 
-    Color emitted(
-        const Vec2 uv,
-        const Vec3 hit_point
-    ) const override;
+    float& getEmissionStrength();
+    const float& getEmissionStrength() const;
+
+    Color& getColor();
+    const Color& getColor() const;
+
+    Color emitted(const HitInfo& rec) const override;
 };
 
 

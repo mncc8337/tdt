@@ -125,9 +125,18 @@ Vec3 Vec3::refraction(const Vec3& n, const float etai_over_etat) {
 }
 
 std::uint32_t Vec3::toABGR() const {
-    std::uint8_t r255 = x * 255.999999f;
-    std::uint8_t g255 = y * 255.999999f;
-    std::uint8_t b255 = z * 255.999999f;
+    auto channel = [](float v) {
+        v = std::fmin(std::fmax(v, 0.0f), 1.0f);
+        return static_cast<std::uint8_t>(v * 255.0f + 0.5f);
+    };
 
-    return 0xff000000 | r255 | (g255 << 8) | (b255 << 16);
+    return 0xff000000 | channel(x) | (channel(y) << 8) | (channel(z) << 16);
+}
+
+
+Vec3& Vec3::clampColor() {
+    this->x = std::fmin(std::fmax(this->x, 0.0f), 1.0f);
+    this->y = std::fmin(std::fmax(this->y, 0.0f), 1.0f);
+    this->z = std::fmin(std::fmax(this->z, 0.0f), 1.0f);
+    return *this;
 }

@@ -10,4 +10,6 @@ public:
     ColorTexture(Color color);
 
     Color get(const HitInfo& rec) const;
+
+    Color& getColor();
 };

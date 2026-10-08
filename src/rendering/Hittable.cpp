@@ -1,6 +1,7 @@
 #include "Hittable.h"
 
-Hittable::Hittable(Material* material):
+Hittable::Hittable(const std::string name, Material* material):
+    name(name),
     material(material) {}
 
 Hittable::~Hittable() {}
@@ -34,4 +35,20 @@ AABB Hittable::getAABB() const {
 
 Transform& Hittable::getTransform() {
     return transform;
+}
+
+const Transform& Hittable::getTransform() const {
+    return transform;
+}
+
+Material* Hittable::getMaterial() const {
+    return material;
+}
+
+std::string& Hittable::getName() {
+    return name;
+}
+
+const std::string& Hittable::getName() const {
+    return name;
 }

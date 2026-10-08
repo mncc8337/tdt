@@ -10,6 +10,7 @@ private:
 
 public:
     Triangle(
+        const std::string name,
         Material* material,
         const Vec3& v0,
         const Vec3& v1,
