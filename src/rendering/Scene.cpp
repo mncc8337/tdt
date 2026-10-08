@@ -1,23 +1,23 @@
 #include "Scene.h"
 #include "misc/floatcmp.h"
 
-Hittable& Scene::add_object(std::unique_ptr<Hittable> object) {
+Hittable& Scene::addObject(std::unique_ptr<Hittable> object) {
     objects.push_back(std::move(object));
     Hittable* obj = objects.back().get();
     return *obj;
 }
 
-Material& Scene::add_material(std::unique_ptr<Material> material) {
+Material& Scene::addMaterial(std::unique_ptr<Material> material) {
     materials.push_back(std::move(material));
     return *materials.back().get();
 }
 
-Texture& Scene::add_texture(std::unique_ptr<Texture> texture) {
+Texture& Scene::addTexture(std::unique_ptr<Texture> texture) {
     textures.push_back(std::move(texture));
     return *textures.back().get();
 }
 
-HitInfo Scene::get_closest(const Ray& ray) const {
+HitInfo Scene::getClosest(const Ray& ray) const {
     HitInfo closest_hit;
     if(flat_bvh.empty()) return closest_hit;
 
@@ -56,18 +56,18 @@ HitInfo Scene::get_closest(const Ray& ray) const {
     return closest_hit;
 }
 
-void Scene::build_bvh() {
+void Scene::buildBVH() {
     BVHNode* temp_root = new BVHNode(objects, 0, objects.size());
     flat_bvh.resize(objects.size() * 2);
 
     int offset = 0;
-    flatten_bvh_tree(temp_root, offset);
+    flattenBVH(temp_root, offset);
     
     flat_bvh.resize(offset);
     delete temp_root;
 }
 
-int Scene::flatten_bvh_tree(BVHNode* node, int& offset) {
+int Scene::flattenBVH(BVHNode* node, int& offset) {
     LinearBVHNode* linear_node = &flat_bvh[offset];
     linear_node->aabb = node->aabb;
     
@@ -79,8 +79,8 @@ int Scene::flatten_bvh_tree(BVHNode* node, int& offset) {
     } else {
         linear_node->num_objects = 0;
         linear_node->axis = node->axis;
-        flatten_bvh_tree(node->left, offset); 
-        linear_node->right_offset = flatten_bvh_tree(node->right, offset);
+        flattenBVH(node->left, offset); 
+        linear_node->right_offset = flattenBVH(node->right, offset);
     }
     return my_offset;
 }

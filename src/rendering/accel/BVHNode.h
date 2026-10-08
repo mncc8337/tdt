@@ -20,9 +20,9 @@ struct BVHNode {
     BVHNode(std::vector<T>& src_objects, size_t start, size_t end) {
         size_t object_span = end - start;
 
-        AABB span_box = get_node_aabb(src_objects[start]);
+        AABB span_box = getNodeAABB(src_objects[start]);
         for(size_t i = start + 1; i < end; i++) {
-            span_box.extend(get_node_aabb(src_objects[i]));
+            span_box.extend(getNodeAABB(src_objects[i]));
         }
 
         // find the longest axis
@@ -37,7 +37,7 @@ struct BVHNode {
         }
 
         auto comparator = [this](const auto& a, const auto& b) {
-            return get_node_aabb(a).minp[axis] < get_node_aabb(b).minp[axis];
+            return getNodeAABB(a).minp[axis] < getNodeAABB(b).minp[axis];
         };
 
         if(object_span <= 2) { 
@@ -81,10 +81,10 @@ struct LinearBVHNode {
     uint8_t pad[1];
 };
 
-inline AABB get_node_aabb(const std::unique_ptr<Hittable>& obj) {
+inline AABB getNodeAABB(const std::unique_ptr<Hittable>& obj) {
     return obj->getAABB();
 }
 
-inline AABB get_node_aabb(const RawTriangle& tri) {
+inline AABB getNodeAABB(const RawTriangle& tri) {
     return AABB({tri.v0, tri.v1, tri.v2}); 
 }

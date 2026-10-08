@@ -22,7 +22,7 @@ void parse_obj_face_token(const std::string& token, int& v_idx, int& vt_idx) {
     }
 }
 
-void load_mesh_from(std::string filename, std::vector<RawTriangle>& tris) {
+void loadMeshFrom(std::string filename, std::vector<RawTriangle>& tris) {
     std::ifstream f(filename);
     if (!f.is_open()) {
         std::cerr << "failed to load file " << filename << std::endl;

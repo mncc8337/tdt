@@ -9,21 +9,21 @@ Color& clamp(Color& color) {
     return color;
 }
 
-Color& gamma_correct(Color& color, float gamma) {
+Color& gammaCorrect(Color& color, float gamma) {
     color.x = std::pow(color.x, 1.0f / gamma);
     color.y = std::pow(color.y, 1.0f / gamma);
     color.z = std::pow(color.z, 1.0f / gamma);
     return color;
 }
 
-Color& exposure_tonemap(Color& color, float exposure) {
+Color& exposureTonemap(Color& color, float exposure) {
     color.x = 1.0f - std::exp(-color.x * exposure);
     color.y = 1.0f - std::exp(-color.y * exposure);
     color.z = 1.0f - std::exp(-color.z * exposure);
     return color;
 }
 
-Color& reihard_tonemap(Color& color) {
+Color& reihardTonemap(Color& color) {
     color /= color + Color(1);
     return color;
 }

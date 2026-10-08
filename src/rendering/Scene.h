@@ -14,20 +14,20 @@ private:
 
     std::vector<LinearBVHNode> flat_bvh;
 
-    int flatten_bvh_tree(BVHNode* node, int& offset);
+    int flattenBVH(BVHNode* node, int& offset);
 
 public:
-    Hittable& add_object(std::unique_ptr<Hittable> object);
+    Hittable& addObject(std::unique_ptr<Hittable> object);
     // void remove_object(Hittable* object);
 
-    Material& add_material(std::unique_ptr<Material> material);
+    Material& addMaterial(std::unique_ptr<Material> material);
 
-    Texture& add_texture(std::unique_ptr<Texture> texture);
+    Texture& addTexture(std::unique_ptr<Texture> texture);
 
-    HitInfo get_closest(const Ray& ray) const;
+    HitInfo getClosest(const Ray& ray) const;
 
     // void save_scene(std::string path);
     // void load_scene(std::string path);
 
-    void build_bvh();
+    void buildBVH();
 };

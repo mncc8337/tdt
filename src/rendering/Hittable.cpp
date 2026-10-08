@@ -25,7 +25,7 @@ AABB Hittable::getAABB() const {
     AABB transformed(corners[0]);
 
     for (int i = 0; i < 8; i++) {
-        Vec3 world_corner = transform.point_apply(corners[i]);
+        Vec3 world_corner = transform.pointApply(corners[i]);
         transformed.extend(world_corner);
     }
 

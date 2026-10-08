@@ -14,8 +14,8 @@ HitInfo Triangle::hit(const Ray& ray) const {
     HitInfo info;
 
     Ray local_ray = ray;
-    local_ray.origin = transform.point_apply_inverse(local_ray.origin);
-    local_ray.direction = transform.dir_apply_inverse(local_ray.direction);
+    local_ray.origin = transform.pointApplyInverse(local_ray.origin);
+    local_ray.direction = transform.dirApplyInverse(local_ray.direction);
 
     Vec3 tuv;
     if(!triangle.hit(local_ray, EPSILON, FAR_DISTANCE, tuv)) {
@@ -33,9 +33,9 @@ HitInfo Triangle::hit(const Ray& ray) const {
     info.normal = info.front_face ? outward_normal : -outward_normal;
 
     info.material = material;
-    info.hit_point = transform.point_apply(info.hit_point);
+    info.hit_point = transform.pointApply(info.hit_point);
     info.distance = (info.hit_point - ray.origin).dot(ray.direction);
-    info.normal = transform.normal_apply(info.normal);
+    info.normal = transform.normalApply(info.normal);
 
 
     float u = tuv.y;
@@ -54,8 +54,8 @@ AABB Triangle::getLocalAABB() const {
 
 AABB Triangle::getAABB() const {
     return AABB({
-        transform.point_apply(triangle.v0),
-        transform.point_apply(triangle.v1),
-        transform.point_apply(triangle.v2)
+        transform.pointApply(triangle.v0),
+        transform.pointApply(triangle.v1),
+        transform.pointApply(triangle.v2)
     });
 }

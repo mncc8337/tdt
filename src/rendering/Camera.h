@@ -12,7 +12,7 @@ private:
     Vec3 lookat;
     Vec3 w, u, v;
 
-    void compute_orientation();
+    void computeOrientation();
 
 public:
     Camera(

@@ -8,13 +8,13 @@ struct Transform {
     Mat3x3 rotation;
     Vec3 translation = Vec3(0);
 
-    Vec3 point_apply(const Vec3& v) const;
-    Vec3 point_apply_inverse(const Vec3& v) const;
+    Vec3 pointApply(const Vec3& v) const;
+    Vec3 pointApplyInverse(const Vec3& v) const;
 
-    Vec3 dir_apply(const Vec3& v) const;
-    Vec3 dir_apply_inverse(const Vec3& v) const;
+    Vec3 dirApply(const Vec3& v) const;
+    Vec3 dirApplyInverse(const Vec3& v) const;
 
-    Vec3 normal_apply(const Vec3& v) const;
+    Vec3 normalApply(const Vec3& v) const;
 
     Transform& rotate(const Vec3 angles);
     Transform& move(const Vec3 pos);
