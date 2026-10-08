@@ -52,7 +52,8 @@ private:
     Hittable* selected_object = nullptr;
     bool uniform_scale = true;
 
-    float& getEditValue(std::string_view field, float& default_value);
+    std::string getTypeName(const std::type_info& ti);
+
     void postEdit(std::string_view field, std::function<void()> edit);
     void applyPendingEdits();
 

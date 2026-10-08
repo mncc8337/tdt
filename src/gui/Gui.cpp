@@ -5,8 +5,10 @@
 #include <chrono>
 #include <cstring>
 #include <iostream>
-#include <cstdio>
+
+#if defined(__GNUC__) || defined(__clang__)
 #include <cxxabi.h>
+#endif
 
 #include "imgui.h"
 #include "imgui-SFML.h"
@@ -54,6 +56,19 @@ Gui::~Gui() {
         render_thread.join();
     }
     ImGui::SFML::Shutdown();
+}
+
+std::string Gui::getTypeName(const std::type_info& ti) {
+#if defined(__GNUC__) || defined(__clang__)
+    int status = 0;
+    std::unique_ptr<char, void(*)(void*)> res{
+        abi::__cxa_demangle(ti.name(), nullptr, nullptr, &status),
+        std::free
+    };
+    return (status == 0) ? res.get() : ti.name();
+#else
+    return ti.name();
+#endif
 }
 
 void Gui::postEdit(std::string_view field, std::function<void()> edit) {
@@ -190,14 +205,8 @@ void Gui::drawObjectPropertiesWindow() {
         return;
     }
 
-    int status;
-    std::unique_ptr<char, void(*)(void*)> res {
-        abi::__cxa_demangle(typeid(*selected_object).name(), nullptr, nullptr, &status),
-        std::free
-    };
-
     ImGui::Text("Name: %s", selected_object->getName().c_str());
-    ImGui::Text("Type: %s", status == 0 ? res.get() : typeid(*selected_object).name());
+    ImGui::Text("Type: %s", getTypeName(typeid(*selected_object)).c_str());
 
     // NOTE:
     // after posting edits, the GUI still takes the stale value
