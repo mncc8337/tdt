@@ -62,62 +62,62 @@ int main() {
     sf::Vector2u window_size = window.getSize();
     RayTracer rt(window_size.x, window_size.y, camera, scene);
 
-    Texture& gray_tex = scene.add_texture(
+    Texture& gray_tex = scene.addTexture(
         std::make_unique<ColorTexture>(Color(0.98))
     );
-    Material& gray_matte_mat = scene.add_material(
+    Material& gray_matte_mat = scene.addMaterial(
         std::make_unique<Matte>(&gray_tex)
     );
 
-    Texture& gold_tex = scene.add_texture(
+    Texture& gold_tex = scene.addTexture(
         std::make_unique<ColorTexture>(Color(1, 0.894f, 0.29f))
     );
-    Material& gold_metal_mat = scene.add_material(
+    Material& gold_metal_mat = scene.addMaterial(
         std::make_unique<Metal>(&gold_tex, 0.2f)
     );
 
-    Texture& white_tex = scene.add_texture(
+    Texture& white_tex = scene.addTexture(
         std::make_unique<ColorTexture>(Color(1))
     );
-    Material& white_dielec_mat = scene.add_material(
+    Material& white_dielec_mat = scene.addMaterial(
         std::make_unique<Dielectric>(&white_tex, 1.52f)
     );
-    Material& white_light_mat = scene.add_material(
+    Material& white_light_mat = scene.addMaterial(
         std::make_unique<Light>(&white_tex, 32.0f, Color(1))
     );
 
-    Hittable& platform = scene.add_object(std::make_unique<Triangle>(
+    Hittable& platform = scene.addObject(std::make_unique<Triangle>(
         &gray_matte_mat,
         Vec3(0, 0, -100),
         Vec3(100, 0, 10),
         Vec3(-100, 0, 10)
     ));
 
-    Hittable& teapot = scene.add_object(std::make_unique<Mesh>(
+    Hittable& teapot = scene.addObject(std::make_unique<Mesh>(
         &gold_metal_mat,
         "assets/model/teapot.obj"
     ));
     teapot.getTransform().rotate(Vec3(0, 0, 0)).move(Vec3(0, 0, 0));
 
-    Hittable& sphere = scene.add_object(std::make_unique<Sphere>(
+    Hittable& sphere = scene.addObject(std::make_unique<Sphere>(
         &white_dielec_mat,
         Vec3(1.2, 1, 4.4),
         1
     ));
 
-    Hittable& light_sphere = scene.add_object(std::make_unique<Sphere>(
+    Hittable& light_sphere = scene.addObject(std::make_unique<Sphere>(
         &white_light_mat,
         Vec3(1.2, 5, 4.4),
         2
     ));
 
-    Hittable& dodecahedron = scene.add_object(std::make_unique<Mesh>(
+    Hittable& dodecahedron = scene.addObject(std::make_unique<Mesh>(
         &white_dielec_mat,
         "assets/model/dodecahedron.obj"
     ));
     dodecahedron.getTransform().rotate(Vec3(M_PIf, 0, 0)).move(Vec3(-3, 1.5, 2.0));
 
-    scene.build_bvh();
+    scene.buildBVH();
 
     sf::Texture texture(window_size);
     sf::Sprite sprite(texture);

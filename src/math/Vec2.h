@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdint>
 #include "Vec3.h"
 
 struct Vec2 {
@@ -37,7 +36,6 @@ struct Vec2 {
     const Vec2& operator /=(const float t);
 
     float dot(const Vec2& other) const;
-    Vec2 cross(const Vec2& other) const;
 
     float length_squared() const;
     float length() const;
@@ -46,9 +44,4 @@ struct Vec2 {
     Vec2 normalize();
 
     Vec2 lerp(const Vec2& v, const float t) const;
-
-    Vec2 reflection(const Vec2& n) const;
-    Vec2 refraction(const Vec2& n, const float etai_over_etat);
-
-    std::uint32_t toABGR() const;
 };

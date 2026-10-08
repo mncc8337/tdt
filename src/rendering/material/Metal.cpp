@@ -9,7 +9,7 @@ Metal::Metal(Texture* texture, float roughness):
 bool Metal::scatter(Ray& ray, Color& attenuation, const HitInfo& rec) const {
     Vec3 specular = ray.direction.reflection(rec.normal);
 
-    ray.direction = (specular + RNG::direction_unnormalized() * roughness).normalized();
+    ray.direction = (specular + RNG::directionUnnormalized() * roughness).normalized();
 
     if(ray.direction.dot(rec.normal) <= 0.0f) {
         return false; 

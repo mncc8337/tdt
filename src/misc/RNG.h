@@ -13,8 +13,7 @@ public:
     static float uniform();
     static float uniform(float from, float to);
     static float normal();
-    static Vec3 direction_unnormalized();
-    static Vec3 direction_normalized();
-    static Vec3 direction_in_unit_sphere();
+    static Vec3 directionUnnormalized();
+    static Vec3 directionNormalized();
     static Color color();
 };

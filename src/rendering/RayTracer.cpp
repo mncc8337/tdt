@@ -26,7 +26,7 @@ const Color RayTracer::trace(Ray ray) const {
     Color throughput(1);
 
     for(unsigned bounces = 0; bounces < max_bounces; bounces++) {
-        HitInfo rec = scene.get_closest(ray);
+        HitInfo rec = scene.getClosest(ray);
         if(!DID_HIT(rec)) {
             // TODO: impl SkyBox class
             // float cosine = ray.direction.dot(Vec3(0, 1, 0));
@@ -79,12 +79,10 @@ void RayTracer::render(unsigned pass) {
             float px = u * viewport_w;
             float py = -v * viewport_h;
             Color new_color = trace(camera.getRayAt(Vec2(px, py)));
-            
-            Color& color = buffer[i + j * viewport_width];
-            color += new_color;
+            buffer[i + j * viewport_width] += new_color;
 
-            Color display = color / (pass + 1);
-            gamma_correct(reihard_tonemap(display), 2.2f);
+            Color display = buffer[i + j * viewport_width] / (pass + 1);
+            gammaCorrect(reihardTonemap(display), 2.2f);
             pixels[i + j * viewport_width] = display.toABGR();
         }
     }

@@ -8,10 +8,10 @@ Camera::Camera(
     focal_length(focal_length),
     position(position),
     lookat(lookat) {
-    compute_orientation();
+    computeOrientation();
 }
 
-void Camera::compute_orientation() {
+void Camera::computeOrientation() {
     w = (lookat - position).normalized();
     u = Vec3(0, 1, 0).cross(w);
     v = w.cross(u);
@@ -46,10 +46,10 @@ const Vec3& Camera::getDirection() const {
 
 void Camera::setDirection(const Vec3 new_dir) {
     lookat = position + new_dir;
-    compute_orientation();
+    computeOrientation();
 }
 
 void Camera::lookAt(const Vec3& v) {
     lookat = v;
-    compute_orientation();
+    computeOrientation();
 }

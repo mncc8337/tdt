@@ -4,7 +4,7 @@
 #include <vector>
 #include "RawTriangle.h"
 
-void load_mesh_from(
+void loadMeshFrom(
     std::string filename,
     std::vector<RawTriangle>& tris
 );

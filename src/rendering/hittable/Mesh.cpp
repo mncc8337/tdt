@@ -10,7 +10,7 @@ Mesh::Mesh(Material* material, const std::vector<RawTriangle>& src_tris):
 
 Mesh::Mesh(Material* material, std::string filename):
     Hittable(material) {
-    load_mesh_from(filename, tris);
+    loadMeshFrom(filename, tris);
     if(tris.empty()) return;
     init_bvh();
 }
@@ -49,8 +49,8 @@ HitInfo Mesh::hit(const Ray& ray) const {
     HitInfo closest_hit;
 
     Ray local_ray = ray;
-    local_ray.origin = transform.point_apply_inverse(local_ray.origin);
-    local_ray.direction = transform.dir_apply_inverse(local_ray.direction);
+    local_ray.origin = transform.pointApplyInverse(local_ray.origin);
+    local_ray.direction = transform.dirApplyInverse(local_ray.direction);
 
     if(flat_bvh.empty()) return closest_hit;
 
@@ -102,11 +102,11 @@ HitInfo Mesh::hit(const Ray& ray) const {
     if(DID_HIT(closest_hit)) {
         closest_hit.material = material;
         // convert to world space coordinates
-        closest_hit.hit_point = transform.point_apply(closest_hit.hit_point);
+        closest_hit.hit_point = transform.pointApply(closest_hit.hit_point);
         // project the hp-origin vector to the ray direction
         // since ray direction is normalized, it simply equals to its world space distance
         closest_hit.distance = (closest_hit.hit_point - ray.origin).dot(ray.direction);
-        closest_hit.normal = transform.normal_apply(closest_hit.normal);
+        closest_hit.normal = transform.normalApply(closest_hit.normal);
     }
     return closest_hit;
 }
