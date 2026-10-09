@@ -73,7 +73,7 @@ std::string Gui::getTypeName(const std::type_info& ti) {
 #endif
 }
 
-void Gui::postEdit(std::string_view field, std::function<void()> edit) {
+void Gui::postEdit(EditType field, std::function<void()> edit) {
     pending_edits[field] = std::move(edit);
     lock_requested = true;
 }
@@ -107,7 +107,6 @@ void Gui::applyPendingEdits() {
 
 void Gui::renderRoutine() {
     float total_time = 0;
-    unsigned completed_passes = 0;
     sf::Clock delta_clock;
 
     while(is_running) {
@@ -125,7 +124,6 @@ void Gui::renderRoutine() {
 
             tracer.render(camera, scene, pass);
             pass++;
-            completed_passes++;
 
             // publish only if the GUI consumed the previous frame, so
             // front_pixels is never read while it is being written
@@ -144,7 +142,8 @@ void Gui::renderRoutine() {
         std::clog << "\r#" << pass << " dt: " << dt << "ms   " << std::flush;
     }
 
-    std::clog << "\nmean: " << (total_time / completed_passes) << std::endl;
+    if(pass > 0)
+        std::clog << "\nmean: " << (total_time / pass) << std::endl;
 }
 
 void Gui::handlePicking() {
@@ -176,11 +175,11 @@ void Gui::handlePicking() {
     float u = (mx - viewport_width / 2.0f) / viewport_width;
     float v = (my - viewport_height / 2.0f) / viewport_height;
 
-    Ray ray = camera.getRayAt(Vec2(u * viewport_w, -v * viewport_h));
+    Ray ray = camera.getRayAt(Vec2(u * viewport_w, -v * viewport_h), false);
     HitInfo hit = scene.getClosest(ray, selected_object);
 }
 
-void Gui::drawObjecsWindow() {
+void Gui::drawObjectsWindow() {
     ImGui::Begin("Objects");
 
     const auto& objects = scene.getObjects();
@@ -240,7 +239,7 @@ void Gui::drawObjectPropertiesWindow() {
     }
 
     if(changed) {
-        postEdit("transform", [this, obj = selected_object, edited]() {
+        postEdit(EditType::ObjectTransform, [this, obj = selected_object, edited]() {
             obj->getTransform() = edited;
             dirty_geometry = true;
         });
@@ -249,7 +248,7 @@ void Gui::drawObjectPropertiesWindow() {
     if(Sphere* sphere = dynamic_cast<Sphere*>(selected_object)) {
         float radius = sphere->getRadius();
         if(ImGui::DragFloat("Radius", &radius, 0.01f, 0.001f, 1000.0f)) {
-            postEdit("radius", [this, sphere, radius]() {
+            postEdit(EditType::ObjectRadius, [this, sphere, radius]() {
                 sphere->getRadius() = radius;
                 dirty_geometry = true;
             });
@@ -265,7 +264,7 @@ void Gui::drawObjectPropertiesWindow() {
             ImGui::Text("Type: Metal");
             float roughness = m->getRoughness();
             if(ImGui::DragFloat("Roughness", &roughness, 0.01f, 0.0f, 1.0f)) {
-                postEdit("roughness", [m, roughness]() {
+                postEdit(EditType::MaterialRoughness, [m, roughness]() {
                     m->getRoughness() = roughness;
                 });
             }
@@ -277,7 +276,7 @@ void Gui::drawObjectPropertiesWindow() {
             ImGui::Text("Type: Light");
             float strength = l->getEmissionStrength();
             if(ImGui::DragFloat("Emission strength", &strength, 0.1f, 0.0f, 1000.0f)) {
-                postEdit("emission", [l, strength]() {
+                postEdit(EditType::MaterialEmission, [l, strength]() {
                     l->getEmissionStrength() = strength;
                 });
             }
@@ -294,11 +293,10 @@ void Gui::drawObjectPropertiesWindow() {
         ImGui::Text("ID: %p", tex);
         if(ColorTexture* ct = dynamic_cast<ColorTexture*>(tex)) {
             ImGui::Text("Type: ColorTexture");
-            Color& tc = ct->getColor();
-            float col[3] = { tc.x, tc.y, tc.z };
-            if(ImGui::ColorEdit3("Color", col)) {
-                postEdit("texture_color", [ct, c = Color(col[0], col[1], col[2])]() {
-                    ct->getColor() = c;
+            Color tc = ct->getColor();
+            if(ImGui::ColorEdit3("Color", &tc[0])) {
+                postEdit(EditType::TextureColor, [ct, tc]() {
+                    ct->getColor() = tc;
                 });
             }
         } else if(tex) {
@@ -313,7 +311,7 @@ void Gui::drawObjectPropertiesWindow() {
 
         float ior = med->getIOR();
         if(ImGui::DragFloat("IOR", &ior, 0.01f, 0.01f, 10.0f)) {
-            postEdit("medium_ior", [med, ior]() {
+            postEdit(EditType::MediumIOR, [med, ior]() {
                 med->getIOR() = ior;
             });
         }
@@ -321,17 +319,16 @@ void Gui::drawObjectPropertiesWindow() {
         if(Homogeneous* h = dynamic_cast<Homogeneous*>(med)) {
             ImGui::Text("Type: Homogeneous");
 
-            Color& sig = h->getSigma();
-            float sigma[3] = { sig.x, sig.y, sig.z };
-            if(ImGui::ColorEdit3("Absorption", sigma)) {
-                postEdit("medium_sigma", [h, c = Color(sigma[0], sigma[1], sigma[2])]() {
-                    h->getSigma() = c;
+            Color sigma = h->getSigma();
+            if(ImGui::ColorEdit3("Absorption", &sigma[0])) {
+                postEdit(EditType::MediumSigma, [h, sigma]() {
+                    h->getSigma() = sigma;
                 });
             }
 
             float density = h->getDensity();
             if(ImGui::DragFloat("Density", &density, 0.01f, 0.0f, 1000.0f)) {
-                postEdit("medium_density", [h, density]() {
+                postEdit(EditType::MediumDensity, [h, density]() {
                     h->getDensity() = density;
                 });
             }
@@ -351,21 +348,35 @@ void Gui::drawCameraWindow() {
 
     float focal_length = camera.getFocalLength();
     if(ImGui::DragFloat("Focal length", &focal_length, 0.01f, 0.01f, 100.0f)) {
-        postEdit("focal", [this, focal_length]() {
+        postEdit(EditType::CameraFocalLength, [this, focal_length]() {
             camera.getFocalLength() = focal_length;
+        });
+    }
+
+    float aperture = camera.getAperture();
+    if(ImGui::DragFloat("Aperture", &aperture, 0.01f, 0.00f, 1000.0f)) {
+        postEdit(EditType::CameraAperture, [this, aperture]() {
+            camera.getAperture() = aperture;
+        });
+    }
+
+    float diverge_strength = camera.getDivergeStrength();
+    if(ImGui::DragFloat("Anti-Alias strength", &diverge_strength, 0.001f, 0.00f, 0.05f)) {
+        postEdit(EditType::CameraDivergeStrength, [this, diverge_strength]() {
+            camera.getDivergeStrength() = diverge_strength;
         });
     }
 
     Vec3 position = camera.getPosition();
     if(ImGui::DragFloat3("Position", &position[0], 0.05f)) {
-        postEdit("position", [this, position]() {
+        postEdit(EditType::CameraPosition, [this, position]() {
             camera.setPosition(position);
         });
     }
 
     Vec3 lookat = camera.getDirection();
     if(ImGui::DragFloat3("Look at", &lookat[0], 0.05f)) {
-        postEdit("lookat", [this, lookat]() {
+        postEdit(EditType::CameraLookAt, [this, lookat]() {
             camera.lookAt(lookat);
         });
     }
@@ -406,7 +417,7 @@ void Gui::run() {
 
         handlePicking();
 
-        drawObjecsWindow();
+        drawObjectsWindow();
         drawObjectPropertiesWindow();
         drawCameraWindow();
 

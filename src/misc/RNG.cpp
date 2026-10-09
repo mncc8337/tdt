@@ -1,4 +1,5 @@
 #include "RNG.h"
+#include <numbers>
 
 std::uniform_real_distribution<float> RNG::uniform_dist(0, 1);
 std::normal_distribution<float> RNG::normal_dist(0, 1);
@@ -26,6 +27,12 @@ Vec3 RNG::directionFast() {
         p = Vec3(uniform(-1, 1), uniform(-1, 1), uniform(-1, 1));
     } while (p.length_squared() > 1.0f);
     return p;
+}
+
+Vec2 RNG::pointInCircle(const float radius) {
+    float angle = uniform() * 2.0f * std::numbers::pi_v<float>;
+    Vec2 point_on_circle(cos(angle) * radius, sin(angle) * radius);
+    return point_on_circle * sqrt(uniform() * radius);
 }
 
 Color RNG::color() {
