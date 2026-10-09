@@ -19,7 +19,7 @@ Vec3 Transform::pointApplyInverse(const Vec3& v) const {
 
 Vec3 Transform::normalApply(const Vec3& n) const {
     if(fequal(scale.x, scale.y) and fequal(scale.y, scale.z)) {
-        return (rotation * n) / scale.x;
+        return rotation * n;
     }
     return (rotation * (n / scale)).normalized();
 }

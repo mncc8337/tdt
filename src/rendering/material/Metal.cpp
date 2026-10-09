@@ -3,25 +3,31 @@
 #include "misc/RNG.h"
 
 Metal::Metal(Texture* texture, float roughness):
-    Material(texture),
+    Material(texture, nullptr),
     roughness(roughness) {}
 
-bool Metal::scatter(Ray& ray, Color& attenuation, const HitInfo& rec) const {
-    Vec3 specular = ray.direction.reflection(rec.normal);
+ScatterResult Metal::scatter(
+    Ray& ray,
+    Color& attenuation,
+    const HitInfo& rec,
+    const Medium& origin_medium
+) const {
+    Vec3 dir = ray.direction.reflection(rec.normal);
 
-    if(fequal0(roughness))
-        ray.direction = specular;
-    else
-        ray.direction = (specular + RNG::directionUnnormalized() * roughness).normalized();
-
-    if(ray.direction.dot(rec.normal) <= 0.0f) {
-        return false; 
+    if(!fequal0(roughness)) {
+        Vec3 p = RNG::directionFast();
+        dir += p * roughness;
     }
 
-    attenuation = texture->get(rec);
+    if(dir.dot(rec.normal) <= 0.0f)
+        dir = dir.reflection(rec.normal);
+
+    ray.direction = dir.normalized();
     ray.origin = rec.hit_point + rec.normal * RAY_ORIGIN_OFFSET;
 
-    return true;
+    attenuation = texture->get(rec);
+
+    return ScatterResult::Scattered;
 }
 
 float& Metal::getRoughness() {

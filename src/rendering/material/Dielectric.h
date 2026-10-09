@@ -4,13 +4,15 @@
 
 class Dielectric: public Material {
 private:
-    float ior;
 
 public:
-    Dielectric(Texture* texture, float ior);
+    Dielectric(Texture* texture, Medium* medium);
 
-    float& getIor();
-
-    bool scatter(Ray& ray, Color& attenuation, const HitInfo& rec) const override;
+    ScatterResult scatter(
+        Ray& ray,
+        Color& attenuation,
+        const HitInfo& rec,
+        const Medium& origin_medium
+    ) const override;
 };
 

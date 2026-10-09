@@ -18,6 +18,8 @@
 #include "rendering/material/Matte.h"
 #include "rendering/material/Dielectric.h"
 #include "rendering/material/Light.h"
+#include "rendering/Medium.h"
+#include "rendering/medium/Homogeneous.h"
 #include "rendering/hittable/Mesh.h"
 #include "rendering/hittable/Triangle.h"
 #include "rendering/hittable/Sphere.h"
@@ -245,7 +247,6 @@ void Gui::drawObjectPropertiesWindow() {
     }
 
     if(Sphere* sphere = dynamic_cast<Sphere*>(selected_object)) {
-        ImGui::SeparatorText("Shape");
         float radius = sphere->getRadius();
         if(ImGui::DragFloat("Radius", &radius, 0.01f, 0.001f, 1000.0f)) {
             postEdit("radius", [this, sphere, radius]() {
@@ -255,11 +256,9 @@ void Gui::drawObjectPropertiesWindow() {
         }
     }
 
-    ImGui::SeparatorText("Material");
     Material* mat = selected_object->getMaterial();
-    if(mat == nullptr) {
-        ImGui::TextDisabled("None");
-    } else {
+    if(mat != nullptr) {
+        ImGui::SeparatorText("Material");
         ImGui::Text("ID: %p", mat);
 
         if(Metal* m = dynamic_cast<Metal*>(mat)) {
@@ -272,12 +271,6 @@ void Gui::drawObjectPropertiesWindow() {
             }
         } else if(Dielectric* d = dynamic_cast<Dielectric*>(mat)) {
             ImGui::Text("Type: Dielectric");
-            float ior = d->getIor();
-            if(ImGui::DragFloat("IOR", &ior, 0.01f, 1.0f, 5.0f)) {
-                postEdit("ior", [d, ior]() {
-                    d->getIor() = ior;
-                });
-            }
         } else if(dynamic_cast<Matte*>(mat)) {
             ImGui::Text("Type: Matte");
         } else if(Light* l = dynamic_cast<Light*>(mat)) {
@@ -310,6 +303,40 @@ void Gui::drawObjectPropertiesWindow() {
             }
         } else if(tex) {
             ImGui::Text("Type: Other");
+        }
+    }
+
+    Medium* med = mat ? mat->getMedium() : nullptr;
+    if(med != nullptr) {
+        ImGui::SeparatorText("Medium");
+        ImGui::Text("ID: %p", med);
+
+        float ior = med->getIOR();
+        if(ImGui::DragFloat("IOR", &ior, 0.01f, 0.01f, 10.0f)) {
+            postEdit("medium_ior", [med, ior]() {
+                med->getIOR() = ior;
+            });
+        }
+
+        if(Homogeneous* h = dynamic_cast<Homogeneous*>(med)) {
+            ImGui::Text("Type: Homogeneous");
+
+            Color& sig = h->getSigma();
+            float sigma[3] = { sig.x, sig.y, sig.z };
+            if(ImGui::ColorEdit3("Absorption", sigma)) {
+                postEdit("medium_sigma", [h, c = Color(sigma[0], sigma[1], sigma[2])]() {
+                    h->getSigma() = c;
+                });
+            }
+
+            float density = h->getDensity();
+            if(ImGui::DragFloat("Density", &density, 0.01f, 0.0f, 1000.0f)) {
+                postEdit("medium_density", [h, density]() {
+                    h->getDensity() = density;
+                });
+            }
+        } else {
+            ImGui::Text("Type: Medium");
         }
     }
 

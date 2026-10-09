@@ -16,12 +16,16 @@ float RNG::normal() {
     return normal_dist(generator);
 }
 
-Vec3 RNG::directionUnnormalized() {
-    return Vec3(normal(), normal(), normal());
+Vec3 RNG::direction() {
+    return Vec3(normal(), normal(), normal()).normalized();
 }
 
-Vec3 RNG::directionNormalized() {
-    return directionUnnormalized().normalized();
+Vec3 RNG::directionFast() {
+    Vec3 p;
+    do {
+        p = Vec3(uniform(-1, 1), uniform(-1, 1), uniform(-1, 1));
+    } while (p.length_squared() > 1.0f);
+    return p;
 }
 
 Color RNG::color() {

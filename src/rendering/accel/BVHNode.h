@@ -3,6 +3,7 @@
 #include <memory>
 #include <algorithm>
 #include <vector>
+#include "misc/floatcmp.h"
 #include "Hittable.h"
 #include "math/AABB.h"
 #include "math/RawTriangle.h"
@@ -86,5 +87,8 @@ inline AABB getNodeAABB(const std::unique_ptr<Hittable>& obj) {
 }
 
 inline AABB getNodeAABB(const RawTriangle& tri) {
-    return AABB({tri.v0, tri.v1, tri.v2}); 
+    AABB ret = AABB({tri.v0, tri.v1, tri.v2}); 
+    ret.minp -= Vec3(EPSILON);
+    ret.maxp += Vec3(EPSILON);
+    return ret;
 }

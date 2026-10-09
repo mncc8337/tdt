@@ -1,10 +1,16 @@
 #include "Material.h"
 
-Material::Material(Texture* texture):
-    texture(texture) {}
+Material::Material(Texture* texture, Medium* medium):
+    texture(texture),
+    medium(medium) {}
 
-bool Material::scatter(Ray& ray, Color& attenuation, const HitInfo& rec) const {
-    return false;
+ScatterResult Material::scatter(
+    Ray& ray,
+    Color& attenuation,
+    const HitInfo& rec,
+    const Medium& origin_medium
+) const {
+    return ScatterResult::Terminated;
 }
 
 Color Material::emitted(const HitInfo& rec) const {
@@ -13,4 +19,8 @@ Color Material::emitted(const HitInfo& rec) const {
 
 Texture* Material::getTexture() const {
     return texture;
+}
+
+Medium* Material::getMedium() const {
+    return medium;
 }

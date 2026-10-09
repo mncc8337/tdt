@@ -1,5 +1,4 @@
 #include "Mesh.h"
-#include "misc/floatcmp.h"
 #include "misc/meshloader.h"
 
 Mesh::Mesh(const std::string name, Material* material, const std::vector<RawTriangle>& src_tris):
@@ -39,7 +38,7 @@ int Mesh::flatten_bvh_tree(BVHNode* node, int& offset) {
     } else {
         linear_node->num_objects = 0;
         linear_node->axis = node->axis;
-        flatten_bvh_tree(node->left, offset); 
+        flatten_bvh_tree(node->left, offset);
         linear_node->right_offset = flatten_bvh_tree(node->right, offset);
     }
     return my_offset;

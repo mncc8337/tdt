@@ -1,4 +1,5 @@
 #include "Scene.h"
+#include "Material.h"
 #include "misc/floatcmp.h"
 
 Hittable& Scene::addObject(std::unique_ptr<Hittable> object) {
@@ -15,6 +16,19 @@ Material& Scene::addMaterial(std::unique_ptr<Material> material) {
 Texture& Scene::addTexture(std::unique_ptr<Texture> texture) {
     textures.push_back(std::move(texture));
     return *textures.back().get();
+}
+
+Medium& Scene::addMedium(std::unique_ptr<Medium> medium) {
+    mediums.push_back(std::move(medium));
+    return *mediums.back().get();
+}
+
+Medium*& Scene::getGlobalMedium() {
+    return global_medium;
+}
+
+const Medium*const& Scene::getGlobalMedium() const {
+    return global_medium;
 }
 
 const std::vector<std::unique_ptr<Hittable>>& Scene::getObjects() const {

@@ -3,10 +3,15 @@
 #include "misc/RNG.h"
 
 Matte::Matte(Texture* texture):
-    Material(texture) {}
+    Material(texture, nullptr) {}
 
-bool Matte::scatter(Ray& ray, Color& attenuation, const HitInfo& rec) const {
-    Vec3 scatter_direction = rec.normal + RNG::directionNormalized();
+ScatterResult Matte::scatter(
+    Ray& ray,
+    Color& attenuation,
+    const HitInfo& rec,
+    const Medium& origin_medium
+) const {
+    Vec3 scatter_direction = rec.normal + RNG::direction();
 
     if(fequal0(scatter_direction.length_squared())) {
         scatter_direction = rec.normal;
@@ -17,5 +22,5 @@ bool Matte::scatter(Ray& ray, Color& attenuation, const HitInfo& rec) const {
 
     attenuation = texture->get(rec); 
 
-    return true;
+    return ScatterResult::Scattered;
 }
