@@ -8,6 +8,8 @@ class Camera {
 private:
     float focal_length;
     float exposure = 1.0f;
+    float aperture = 0.02f;
+    float diverge_strength = 0.001;
 
     Vec3 position;
     Vec3 lookat;
@@ -28,6 +30,12 @@ public:
     float& getExposure();
     const float& getExposure() const;
 
+    float& getAperture();
+    const float& getAperture() const;
+
+    float& getDivergeStrength();
+    const float& getDivergeStrength() const;
+
     const Vec3& getPosition() const;
     void setPosition(const Vec3 new_pos);
 
@@ -36,5 +44,5 @@ public:
 
     void lookAt(const Vec3& v);
 
-    Ray getRayAt(Vec2 uv) const;
+    Ray getRayAt(Vec2 uv, bool jitter = true) const;
 };

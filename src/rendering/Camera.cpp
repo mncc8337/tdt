@@ -1,4 +1,6 @@
 #include "Camera.h"
+#include "floatcmp.h"
+#include "misc/RNG.h"
 
 Camera::Camera(
     float focal_length,
@@ -17,10 +19,24 @@ void Camera::computeOrientation() {
     v = w.cross(u);
 }
 
-Ray Camera::getRayAt(Vec2 uv) const {
+Ray Camera::getRayAt(Vec2 uv, bool jitter) const {
     Ray ray;
     ray.origin = position;
     ray.direction = focal_length * w + uv.x * u + uv.y * v;
+
+    if(jitter) {
+        if(!fequal0(aperture)) {
+            // offset ray origin for defocus effect
+            Vec2 defocus_jitter = RNG::pointInCircle(aperture / 2.0f);
+            ray.origin += u * defocus_jitter.x + v * defocus_jitter.y;
+        }
+        if(!fequal0(diverge_strength)) {
+            // offset viewpoint for anti-aliasing
+            Vec2 jitter = RNG::pointInCircle(diverge_strength);
+            ray.direction += u * jitter.x + v * jitter.y;
+        }
+    }
+
     ray.direction.normalize();
     return ray;
 }
@@ -39,6 +55,23 @@ float& Camera::getExposure() {
 
 const float& Camera::getExposure() const {
     return exposure;
+}
+
+
+float& Camera::getAperture() {
+    return aperture;
+}
+
+const float& Camera::getAperture() const {
+    return aperture;
+}
+
+float& Camera::getDivergeStrength() {
+    return diverge_strength;
+}
+
+const float& Camera::getDivergeStrength() const {
+    return diverge_strength;
 }
 
 const Vec3& Camera::getPosition() const {

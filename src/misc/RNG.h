@@ -2,6 +2,7 @@
 
 #include <random>
 #include "math/Vec3.h"
+#include "math/Vec2.h"
 
 class RNG {
 private:
@@ -15,5 +16,6 @@ public:
     static float normal();
     static Vec3 direction();
     static Vec3 directionFast();
+    static Vec2 pointInCircle(const float radius = 1.0f);
     static Color color();
 };
