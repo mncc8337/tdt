@@ -10,17 +10,20 @@ static float reflectance(float cosine, float ri) {
     return r0 + (1 - r0) * icos * icos * icos * icos * icos;
 }
 
-Dielectric::Dielectric(Texture* texture, float ior):
-    Material(texture),
-    ior(ior) {}
+Dielectric::Dielectric(Texture* texture, Medium* medium):
+    Material(texture, medium) {}
 
-bool Dielectric::scatter(Ray& ray, Color& attenuation, const HitInfo& rec) const {
+ScatterResult Dielectric::scatter(
+    Ray& ray,
+    Color& attenuation,
+    const HitInfo& rec,
+    const Medium& origin_medium
+) const {
     Vec3 dir = ray.direction.normalized();
 
-    float env_ior = 1.0; // TODO: move this into scene defs
-    float ior_ratio = env_ior / ior;
+    float ior_ratio = origin_medium.getIOR() / medium->getIOR();
     if(!rec.front_face) {
-        ior_ratio = ior / env_ior;
+        ior_ratio = 1.0f / ior_ratio;
     }
 
     float cos_theta = std::min(-dir.dot(rec.normal), 1.0f);
@@ -28,18 +31,14 @@ bool Dielectric::scatter(Ray& ray, Color& attenuation, const HitInfo& rec) const
     bool cannot_refract = ior_ratio * ior_ratio * (1.0 - cos_theta * cos_theta) > 1.0;
 
     if((cannot_refract or should_reflect) and !fequal(ior_ratio, 1.0f)) {
+        // reflection keeps the ray in its current medium
         ray.direction = dir.reflection(rec.normal);
         ray.origin = rec.hit_point + rec.normal * RAY_ORIGIN_OFFSET;
-    } else {
-        ray.direction = dir.refraction(rec.normal, ior_ratio);
-        ray.origin = rec.hit_point - rec.normal * RAY_ORIGIN_OFFSET;
+        return ScatterResult::Scattered;
     }
 
-    attenuation = texture->get(rec);
-
-    return true;
-}
-
-float& Dielectric::getIor() {
-    return ior;
+    // refraction crosses the boundary
+    ray.direction = dir.refraction(rec.normal, ior_ratio);
+    ray.origin = rec.hit_point - rec.normal * RAY_ORIGIN_OFFSET;
+    return ScatterResult::Refracted;
 }

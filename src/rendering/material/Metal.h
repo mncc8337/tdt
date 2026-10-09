@@ -12,5 +12,10 @@ public:
     float& getRoughness();
     const float& getRoughness() const;
 
-    bool scatter(Ray& ray, Color& attenuation, const HitInfo& rec) const override;
+    ScatterResult scatter(
+        Ray& ray,
+        Color& attenuation,
+        const HitInfo& rec,
+        const Medium& origin_medium
+    ) const override;
 };

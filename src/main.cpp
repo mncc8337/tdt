@@ -9,10 +9,21 @@
 #include "rendering/hittable/Mesh.h"
 #include "rendering/hittable/Triangle.h"
 #include "rendering/hittable/Sphere.h"
+#include "rendering/Medium.h"
+#include "rendering/medium/Homogeneous.h"
 
 int main() {
-    Camera camera(1.0f, Vec3(-3, 5, 10), Vec3(0, 0, 0));
+    Camera camera(1.0f, Vec3(-3, 5, 10), Vec3(0, 3.75f, 0));
     Scene scene;
+
+    Medium& vacuum = scene.addMedium(std::make_unique<Medium>());
+    scene.getGlobalMedium() = &vacuum;
+
+    Medium& glass = scene.addMedium(std::make_unique<Homogeneous>(
+        1.52f,
+        Color(0),
+        1.0f
+    ));
 
     Texture& gray_tex = scene.addTexture(
         std::make_unique<ColorTexture>(Color(0.98))
@@ -25,14 +36,14 @@ int main() {
         std::make_unique<ColorTexture>(Color(1, 0.894f, 0.29f))
     );
     Material& gold_metal_mat = scene.addMaterial(
-        std::make_unique<Metal>(&gold_tex, 0.2f)
+        std::make_unique<Metal>(&gold_tex, 0.25f)
     );
 
     Texture& white_tex = scene.addTexture(
         std::make_unique<ColorTexture>(Color(1))
     );
     Material& white_dielec_mat = scene.addMaterial(
-        std::make_unique<Dielectric>(&white_tex, 1.52f)
+        std::make_unique<Dielectric>(&white_tex, &glass)
     );
 
     Texture& light_tex = scene.addTexture(
@@ -50,36 +61,21 @@ int main() {
         Vec3(-100, 0, 10)
     ));
 
-    Hittable& teapot = scene.addObject(std::make_unique<Mesh>(
-        "teapot",
+    scene.addObject(std::make_unique<Mesh>(
+        "bunny",
         &gold_metal_mat,
-        "assets/model/teapot.obj"
-    ));
-    teapot.getTransform().rotate(Vec3(0, 0, 0)).move(Vec3(0, 0, 0));
-
-    scene.addObject(std::make_unique<Sphere>(
-        "dielec",
-        &white_dielec_mat,
-        Vec3(1.2, 1, 4.4),
-        1
-    ));
+        "assets/model/stanford-bunny.obj"
+    )).getTransform().rotate(Vec3(0.0f, 0.17f, 0.0f)).move(Vec3(-1.05f, 0.0f, 0.0f));
 
     scene.addObject(std::make_unique<Sphere>(
         "light",
         &light_mat,
-        Vec3(1.2, 5, 4.4),
-        2
-    ));
-
-    Hittable& dodecahedron = scene.addObject(std::make_unique<Mesh>(
-        "dodecahedron",
-        &white_dielec_mat,
-        "assets/model/dodecahedron.obj"
-    ));
-    dodecahedron.getTransform().rotate(Vec3(0, 0, 0)).move(Vec3(-3, 1.5, 2.0));
+        Vec3(0),
+        7.61f
+    )).getTransform().move(Vec3(15.35f, 15.4f, -9.0f));
 
     scene.buildBVH();
 
-    Gui gui(camera, scene, 400, 300);
+    Gui gui(camera, scene, 800, 600);
     gui.run();
 }

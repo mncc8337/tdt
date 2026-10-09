@@ -50,13 +50,22 @@ HitInfo Triangle::hit(const Ray& ray) const {
 }
 
 AABB Triangle::getLocalAABB() const {
-    return AABB({triangle.v0, triangle.v1, triangle.v2});
+    AABB ret = AABB({triangle.v0, triangle.v1, triangle.v2});
+    
+    // expand the box a little bit so it is not collapse into a plane
+    ret.minp -= Vec3(EPSILON);
+    ret.maxp += Vec3(EPSILON);
+    return ret;
 }
 
 AABB Triangle::getAABB() const {
-    return AABB({
+    AABB ret = AABB({
         transform.pointApply(triangle.v0),
         transform.pointApply(triangle.v1),
         transform.pointApply(triangle.v2)
     });
+
+    ret.minp -= Vec3(EPSILON);
+    ret.maxp += Vec3(EPSILON);
+    return ret;
 }

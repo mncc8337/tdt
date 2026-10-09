@@ -4,6 +4,8 @@
 #include <memory>
 
 #include "Hittable.h"
+#include "Texture.h"
+#include "Medium.h"
 #include "accel/BVHNode.h"
 
 class Scene {
@@ -11,6 +13,9 @@ private:
     std::vector<std::unique_ptr<Hittable>> objects;
     std::vector<std::unique_ptr<Material>> materials;
     std::vector<std::unique_ptr<Texture>> textures;
+    std::vector<std::unique_ptr<Medium>> mediums;
+
+    Medium* global_medium;
 
     std::vector<LinearBVHNode> flat_bvh;
 
@@ -21,12 +26,15 @@ public:
     // void remove_object(Hittable* object);
 
     Material& addMaterial(std::unique_ptr<Material> material);
-
     Texture& addTexture(std::unique_ptr<Texture> texture);
+    Medium& addMedium(std::unique_ptr<Medium> medium);
 
-    HitInfo getClosest(const Ray& ray, Hittable*& obj) const;
+    Medium*& getGlobalMedium();
+    const Medium*const& getGlobalMedium() const;
 
     const std::vector<std::unique_ptr<Hittable>>& getObjects() const;
+
+    HitInfo getClosest(const Ray& ray, Hittable*& obj) const;
 
     // void save_scene(std::string path);
     // void load_scene(std::string path);

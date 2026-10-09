@@ -6,6 +6,11 @@ class Matte: public Material {
 public:
     Matte(Texture* texture);
 
-    bool scatter(Ray& ray, Color& attenuation, const HitInfo& rec) const override;
+    ScatterResult scatter(
+        Ray& ray,
+        Color& attenuation,
+        const HitInfo& rec,
+        const Medium& origin_medium
+    ) const override;
 };
 

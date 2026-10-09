@@ -1,7 +1,6 @@
 #pragma once
 
 #include "math/Ray.h"
-#include "Material.h"
 #include "HitInfo.h"
 #include "math/AABB.h"
 #include "math/Transform.h"
