@@ -1,4 +1,6 @@
 #include "Gui.h"
+#include "Material.h"
+#include "Texture.h"
 
 #include <SFML/System/Time.hpp>
 
@@ -73,8 +75,8 @@ std::string Gui::getTypeName(const std::type_info& ti) {
 #endif
 }
 
-void Gui::postEdit(EditType field, std::function<void()> edit) {
-    pending_edits[field] = std::move(edit);
+void Gui::postEdit(std::function<void()> edit) {
+    pending_edits.push_back(std::move(edit));
     lock_requested = true;
 }
 
@@ -87,7 +89,7 @@ void Gui::applyPendingEdits() {
     // i.e the scene is not locked
     if(!lock.owns_lock()) return;
 
-    for(const auto& [field, edit] : pending_edits) {
+    for(const auto& edit : pending_edits) {
         edit();
     }
     pending_edits.clear();
@@ -158,9 +160,8 @@ void Gui::handlePicking() {
         || mouse.y < 0
         || mouse.x >= window_size.x
         || mouse.y >= window_size.y
-    ) {
+    )
         return;
-    }
 
     // the sprite may be scaled to the window, so map the mouse
     // position back into texture (render buffer) pixel coordinates
@@ -179,35 +180,14 @@ void Gui::handlePicking() {
     HitInfo hit = scene.getClosest(ray, selected_object);
 }
 
-void Gui::drawObjectsWindow() {
-    ImGui::Begin("Objects");
-
-    const auto& objects = scene.getObjects();
-
-    for(size_t i = 0; i < objects.size(); i++) {
-        Hittable& obj = *objects[i];
-        char label[64];
-        std::snprintf(label, sizeof(label), "[%zu] %s", i, obj.getName().c_str());
-
-        if(ImGui::Selectable(label, &obj == selected_object)) {
-            selected_object = &obj;
-        }
-    }
-
-    ImGui::End();
-}
-
-void Gui::drawObjectPropertiesWindow() {
-    ImGui::Begin("Selected Object");
-
-    if(selected_object == nullptr) {
+void Gui::drawObjectPropertiesSection(Hittable* object) {
+    if(object == nullptr) {
         ImGui::TextDisabled("No object selected.");
-        ImGui::End();
         return;
     }
 
-    ImGui::Text("Name: %s", selected_object->getName().c_str());
-    ImGui::Text("Type: %s", getTypeName(typeid(*selected_object)).c_str());
+    ImGui::Text("Name: %s", object->getName().c_str());
+    ImGui::Text("Type: %s", getTypeName(typeid(*object)).c_str());
 
     // NOTE:
     // after posting edits, the GUI still takes the stale value
@@ -215,7 +195,9 @@ void Gui::drawObjectPropertiesWindow() {
     // which may causes some visual bugs
     // it is kinda hard to to fix, and the bug is minor anyways
 
-    Transform edited = selected_object->getTransform();
+    // FIXME: add object ptr to the change queue merging logics
+
+    Transform edited = object->getTransform();
     ImGui::SeparatorText("Transform");
 
     bool changed = false;
@@ -239,103 +221,216 @@ void Gui::drawObjectPropertiesWindow() {
     }
 
     if(changed) {
-        postEdit(EditType::ObjectTransform, [this, obj = selected_object, edited]() {
+        postEdit([this, obj = object, edited]() {
             obj->getTransform() = edited;
             dirty_geometry = true;
         });
     }
 
-    if(Sphere* sphere = dynamic_cast<Sphere*>(selected_object)) {
+    if(Sphere* sphere = dynamic_cast<Sphere*>(object)) {
         float radius = sphere->getRadius();
         if(ImGui::DragFloat("Radius", &radius, 0.01f, 0.001f, 1000.0f)) {
-            postEdit(EditType::ObjectRadius, [this, sphere, radius]() {
+            postEdit([this, sphere, radius]() {
                 sphere->getRadius() = radius;
                 dirty_geometry = true;
             });
         }
     }
+}
 
-    Material* mat = selected_object->getMaterial();
-    if(mat != nullptr) {
-        ImGui::SeparatorText("Material");
-        ImGui::Text("ID: %p", mat);
-
-        if(Metal* m = dynamic_cast<Metal*>(mat)) {
-            ImGui::Text("Type: Metal");
-            float roughness = m->getRoughness();
-            if(ImGui::DragFloat("Roughness", &roughness, 0.01f, 0.0f, 1.0f)) {
-                postEdit(EditType::MaterialRoughness, [m, roughness]() {
-                    m->getRoughness() = roughness;
-                });
-            }
-        } else if(Dielectric* d = dynamic_cast<Dielectric*>(mat)) {
-            ImGui::Text("Type: Dielectric");
-        } else if(dynamic_cast<Matte*>(mat)) {
-            ImGui::Text("Type: Matte");
-        } else if(Light* l = dynamic_cast<Light*>(mat)) {
-            ImGui::Text("Type: Light");
-            float strength = l->getEmissionStrength();
-            if(ImGui::DragFloat("Emission strength", &strength, 0.1f, 0.0f, 1000.0f)) {
-                postEdit(EditType::MaterialEmission, [l, strength]() {
-                    l->getEmissionStrength() = strength;
-                });
-            }
-        } else {
-            ImGui::Text("Type: Unknown");
-        }
+void Gui::drawMaterialPropertiesSection(Material* material) {
+    if(material == nullptr) {
+        ImGui::TextDisabled("No material selected.");
+        return;
     }
 
-    ImGui::SeparatorText("Texture");
-    Texture* tex = mat ? mat->getTexture() : nullptr;
-    if(tex == nullptr) {
-        ImGui::TextDisabled("None");
+    ImGui::Text("Name: %s", material->getName().c_str());
+    ImGui::Text("Type: %s", getTypeName(typeid(*material)).c_str());
+
+    if(Metal* m = dynamic_cast<Metal*>(material)) {
+        float roughness = m->getRoughness();
+        if(ImGui::DragFloat("Roughness", &roughness, 0.01f, 0.0f, 1.0f)) {
+            postEdit([m, roughness]() {
+                m->getRoughness() = roughness;
+            });
+        }
+    } else if(Dielectric* d = dynamic_cast<Dielectric*>(material)) {
+        // nothing
+    } else if(dynamic_cast<Matte*>(material)) {
+        // nothing
+    } else if(Light* l = dynamic_cast<Light*>(material)) {
+        float strength = l->getEmissionStrength();
+        if(ImGui::DragFloat("Emission strength", &strength, 0.1f, 0.0f, 1000.0f)) {
+            postEdit([l, strength]() {
+                l->getEmissionStrength() = strength;
+            });
+        }
     } else {
-        ImGui::Text("ID: %p", tex);
-        if(ColorTexture* ct = dynamic_cast<ColorTexture*>(tex)) {
-            ImGui::Text("Type: ColorTexture");
-            Color tc = ct->getColor();
-            if(ImGui::ColorEdit3("Color", &tc[0])) {
-                postEdit(EditType::TextureColor, [ct, tc]() {
-                    ct->getColor() = tc;
-                });
-            }
-        } else if(tex) {
-            ImGui::Text("Type: Other");
-        }
+        ImGui::Text("not implemented");
+    }
+}
+
+void Gui::drawTexturePropertiesSection(Texture* texture) {
+    if(texture == nullptr) {
+        ImGui::TextDisabled("No texture selected.");
+        return;
     }
 
-    Medium* med = mat ? mat->getMedium() : nullptr;
-    if(med != nullptr) {
-        ImGui::SeparatorText("Medium");
-        ImGui::Text("ID: %p", med);
+    ImGui::Text("Name: %s", texture->getName().c_str());
+    ImGui::Text("Type: %s", getTypeName(typeid(*texture)).c_str());
+    if(ColorTexture* ct = dynamic_cast<ColorTexture*>(texture)) {
+        Color tc = ct->getColor();
+        if(ImGui::ColorEdit3("Color", &tc[0])) {
+            postEdit([ct, tc]() {
+                ct->getColor() = tc;
+            });
+        }
+    } else if(texture) {
+        ImGui::Text("not implemented");
+    }
+}
 
-        float ior = med->getIOR();
-        if(ImGui::DragFloat("IOR", &ior, 0.01f, 0.01f, 10.0f)) {
-            postEdit(EditType::MediumIOR, [med, ior]() {
-                med->getIOR() = ior;
+void Gui::drawMediumPropertiesSection(Medium* medium) {
+    if(medium == nullptr) {
+        ImGui::TextDisabled("No medium selected.");
+        return;
+    }
+
+    ImGui::Text("Name: %s", medium->getName().c_str());
+    ImGui::Text("Type: %s", getTypeName(typeid(*medium)).c_str());
+
+    float ior = medium->getIOR();
+    if(ImGui::DragFloat("IOR", &ior, 0.01f, 0.01f, 10.0f)) {
+        postEdit([medium, ior]() {
+            medium->getIOR() = ior;
+        });
+    }
+
+    if(Homogeneous* h = dynamic_cast<Homogeneous*>(medium)) {
+        Color sigma = h->getSigma();
+        if(ImGui::ColorEdit3("Absorption", &sigma[0])) {
+            postEdit([h, sigma]() {
+                h->getSigma() = sigma;
             });
         }
 
-        if(Homogeneous* h = dynamic_cast<Homogeneous*>(med)) {
-            ImGui::Text("Type: Homogeneous");
+        float density = h->getDensity();
+        if(ImGui::DragFloat("Density", &density, 0.01f, 0.0f, 1000.0f)) {
+            postEdit([h, density]() {
+                h->getDensity() = density;
+            });
+        }
+    } else {
+        ImGui::Text("not implemented");
+    }
+}
 
-            Color sigma = h->getSigma();
-            if(ImGui::ColorEdit3("Absorption", &sigma[0])) {
-                postEdit(EditType::MediumSigma, [h, sigma]() {
-                    h->getSigma() = sigma;
-                });
-            }
+void Gui::drawObjectsWindow() {
+    ImGui::Begin("Objects");
 
-            float density = h->getDensity();
-            if(ImGui::DragFloat("Density", &density, 0.01f, 0.0f, 1000.0f)) {
-                postEdit(EditType::MediumDensity, [h, density]() {
-                    h->getDensity() = density;
-                });
-            }
-        } else {
-            ImGui::Text("Type: Medium");
+    const auto& objects = scene.getObjects();
+
+    for(size_t i = 0; i < objects.size(); i++) {
+        Hittable& obj = *objects[i];
+        char label[64];
+        std::snprintf(label, sizeof(label), "[%zu] %s", i, obj.getName().c_str());
+
+        if(ImGui::Selectable(label, &obj == selected_object)) {
+            selected_object = &obj;
         }
     }
+
+    ImGui::Separator();
+    drawObjectPropertiesSection(selected_object);
+
+    if(selected_object) {
+        Material* mat = selected_object->getMaterial();
+        Texture* tex = mat ? mat->getTexture() : nullptr;
+        Medium* med = mat ? mat->getMedium() : nullptr;
+
+        if(ImGui::CollapsingHeader("Material")) {
+            if(mat) drawMaterialPropertiesSection(mat);
+            else {
+                ImGui::TextDisabled("No material assigned.");
+                // add button to assign materials
+            }
+        } if(ImGui::CollapsingHeader("Texture")) {
+            if(tex) drawTexturePropertiesSection(tex);
+            else {
+                ImGui::TextDisabled("No texture assigned.");
+                // add button to assign textures
+            }
+        } if(ImGui::CollapsingHeader("Medium")) {
+            if(med) drawMediumPropertiesSection(med);
+            else {
+                ImGui::TextDisabled("No medium assigned.");
+                // add button to assign mediums
+            }
+        }
+    }
+
+    ImGui::End();
+}
+
+void Gui::drawMaterialsWindow() {
+    ImGui::Begin("Materials");
+
+    const auto& materials = scene.getMaterials();
+
+    for(size_t i = 0; i < materials.size(); i++) {
+        Material& mat = *materials[i];
+        char label[64];
+        std::snprintf(label, sizeof(label), "[%zu] %s", i, mat.getName().c_str());
+
+        if(ImGui::Selectable(label, &mat == selected_material)) {
+            selected_material = &mat;
+        }
+    }
+
+    ImGui::Separator();
+    drawMaterialPropertiesSection(selected_material);
+
+    ImGui::End();
+}
+
+void Gui::drawTexturesWindow() {
+    ImGui::Begin("Textures");
+
+    const auto& textures = scene.getTextures();
+
+    for(size_t i = 0; i < textures.size(); i++) {
+        Texture& tex = *textures[i];
+        char label[64];
+        std::snprintf(label, sizeof(label), "[%zu] %s", i, tex.getName().c_str());
+
+        if(ImGui::Selectable(label, &tex == selected_texture)) {
+            selected_texture = &tex;
+        }
+    }
+
+    ImGui::Separator();
+    drawTexturePropertiesSection(selected_texture);
+
+    ImGui::End();
+}
+
+void Gui::drawMediumsWindow() {
+    ImGui::Begin("Mediums");
+
+    const auto& mediums = scene.getMediums();
+
+    for(size_t i = 0; i < mediums.size(); i++) {
+        Medium& med = *mediums[i];
+        char label[64];
+        std::snprintf(label, sizeof(label), "[%zu] %s", i, med.getName().c_str());
+
+        if(ImGui::Selectable(label, &med == selected_medium)) {
+            selected_medium = &med;
+        }
+    }
+
+    ImGui::Separator();
+    drawMediumPropertiesSection(selected_medium);
 
     ImGui::End();
 }
@@ -348,35 +443,35 @@ void Gui::drawCameraWindow() {
 
     float focal_length = camera.getFocalLength();
     if(ImGui::DragFloat("Focal length", &focal_length, 0.01f, 0.01f, 100.0f)) {
-        postEdit(EditType::CameraFocalLength, [this, focal_length]() {
+        postEdit([this, focal_length]() {
             camera.getFocalLength() = focal_length;
         });
     }
 
     float aperture = camera.getAperture();
     if(ImGui::DragFloat("Aperture", &aperture, 0.01f, 0.00f, 1000.0f)) {
-        postEdit(EditType::CameraAperture, [this, aperture]() {
+        postEdit([this, aperture]() {
             camera.getAperture() = aperture;
         });
     }
 
     float diverge_strength = camera.getDivergeStrength();
     if(ImGui::DragFloat("Anti-Alias strength", &diverge_strength, 0.001f, 0.00f, 0.05f)) {
-        postEdit(EditType::CameraDivergeStrength, [this, diverge_strength]() {
+        postEdit([this, diverge_strength]() {
             camera.getDivergeStrength() = diverge_strength;
         });
     }
 
     Vec3 position = camera.getPosition();
     if(ImGui::DragFloat3("Position", &position[0], 0.05f)) {
-        postEdit(EditType::CameraPosition, [this, position]() {
+        postEdit([this, position]() {
             camera.setPosition(position);
         });
     }
 
     Vec3 lookat = camera.getDirection();
     if(ImGui::DragFloat3("Look at", &lookat[0], 0.05f)) {
-        postEdit(EditType::CameraLookAt, [this, lookat]() {
+        postEdit([this, lookat]() {
             camera.lookAt(lookat);
         });
     }
@@ -418,7 +513,9 @@ void Gui::run() {
         handlePicking();
 
         drawObjectsWindow();
-        drawObjectPropertiesWindow();
+        drawMaterialsWindow();
+        drawTexturesWindow();
+        drawMediumsWindow();
         drawCameraWindow();
 
         // apply whatever the widgets changed this frame

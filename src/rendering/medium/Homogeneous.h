@@ -8,7 +8,7 @@ private:
     float density;
 
 public:
-    Homogeneous(const float ior, const Color sigma, const float density);
+    Homogeneous(const std::string name, const float ior, const Color sigma, const float density);
 
     Color& getSigma();
     const Color& getSigma() const;

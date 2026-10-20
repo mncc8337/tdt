@@ -35,6 +35,18 @@ const std::vector<std::unique_ptr<Hittable>>& Scene::getObjects() const {
     return objects;
 }
 
+const std::vector<std::unique_ptr<Material>>& Scene::getMaterials() const {
+    return materials;
+}
+
+const std::vector<std::unique_ptr<Texture>>& Scene::getTextures() const {
+    return textures;
+}
+
+const std::vector<std::unique_ptr<Medium>>& Scene::getMediums() const {
+    return mediums;
+}
+
 HitInfo Scene::getClosest(const Ray& ray, Hittable*& obj) const {
     HitInfo closest_hit;
     obj = nullptr;

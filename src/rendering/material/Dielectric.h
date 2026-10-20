@@ -6,7 +6,7 @@ class Dielectric: public Material {
 private:
 
 public:
-    Dielectric(Texture* texture, Medium* medium);
+    Dielectric(const std::string name, Texture* texture, Medium* medium);
 
     ScatterResult scatter(
         Ray& ray,

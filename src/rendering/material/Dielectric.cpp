@@ -10,8 +10,8 @@ static float reflectance(float cosine, float ri) {
     return r0 + (1 - r0) * icos * icos * icos * icos * icos;
 }
 
-Dielectric::Dielectric(Texture* texture, Medium* medium):
-    Material(texture, medium) {}
+Dielectric::Dielectric(const std::string name, Texture* texture, Medium* medium):
+    Material(name, texture, medium) {}
 
 ScatterResult Dielectric::scatter(
     Ray& ray,

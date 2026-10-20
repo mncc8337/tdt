@@ -7,7 +7,7 @@ private:
     float roughness;
 
 public:
-    Metal(Texture* texture, float roughness);
+    Metal(const std::string name, Texture* texture, float roughness);
 
     float& getRoughness();
     const float& getRoughness() const;

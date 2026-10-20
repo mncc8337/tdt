@@ -8,6 +8,17 @@
 #include "math/AABB.h"
 #include "math/RawTriangle.h"
 
+inline AABB getNodeAABB(const std::unique_ptr<Hittable>& obj) {
+    return obj->getAABB();
+}
+
+inline AABB getNodeAABB(const RawTriangle& tri) {
+    AABB ret = AABB({tri.v0, tri.v1, tri.v2}); 
+    ret.minp -= Vec3(EPSILON);
+    ret.maxp += Vec3(EPSILON);
+    return ret;
+}
+
 struct BVHNode {
     AABB aabb;
     BVHNode* left = nullptr;
@@ -29,9 +40,9 @@ struct BVHNode {
         // find the longest axis
         float max_length = span_box.maxp[0] - span_box.minp[0];
         axis = 0;
-        for (int a = 1; a < 3; a++) {
+        for(int a = 1; a < 3; a++) {
             float len = span_box.maxp[a] - span_box.minp[a];
-            if (len > max_length) {
+            if(len > max_length) {
                 max_length = len;
                 axis = a;
             }
@@ -81,14 +92,3 @@ struct LinearBVHNode {
     uint8_t axis;
     uint8_t pad[1];
 };
-
-inline AABB getNodeAABB(const std::unique_ptr<Hittable>& obj) {
-    return obj->getAABB();
-}
-
-inline AABB getNodeAABB(const RawTriangle& tri) {
-    AABB ret = AABB({tri.v0, tri.v1, tri.v2}); 
-    ret.minp -= Vec3(EPSILON);
-    ret.maxp += Vec3(EPSILON);
-    return ret;
-}

@@ -5,30 +5,15 @@
 #include <atomic>
 #include <cstdint>
 #include <functional>
-#include <map>
 #include <mutex>
 #include <thread>
 #include <vector>
 
+#include "Medium.h"
+#include "Texture.h"
 #include "rendering/Camera.h"
 #include "rendering/RayTracer.h"
 #include "rendering/Scene.h"
-
-enum EditType {
-    ObjectTransform,
-    ObjectRadius,
-    MaterialRoughness,
-    MaterialEmission,
-    TextureColor,
-    MediumIOR,
-    MediumSigma,
-    MediumDensity,
-    CameraFocalLength,
-    CameraAperture,
-    CameraDivergeStrength,
-    CameraPosition,
-    CameraLookAt,
-};
 
 class Gui {
 private:
@@ -53,7 +38,7 @@ private:
     // off re-acquiring the mutex for its next pass, so the queued edits
     // get their chance instead of racing it every time.
     std::atomic<bool> lock_requested{false};
-    std::map<EditType, std::function<void()>> pending_edits;
+    std::vector<std::function<void()>> pending_edits;
     std::mutex scene_mutex;
 
     bool dirty_geometry = false;
@@ -65,18 +50,30 @@ private:
     unsigned pass = 0;
 
     Hittable* selected_object = nullptr;
+    Material* selected_material = nullptr;
+    Texture* selected_texture = nullptr;
+    Medium* selected_medium = nullptr;
+
     bool uniform_scale = true;
 
     std::string getTypeName(const std::type_info& ti);
 
-    void postEdit(EditType field, std::function<void()> edit);
+    void postEdit(std::function<void()> edit);
     void applyPendingEdits();
 
     void renderRoutine();
-    void drawObjectsWindow();
-    void drawObjectPropertiesWindow();
-    void drawCameraWindow();
     void handlePicking();
+
+    void drawObjectPropertiesSection(Hittable* object);
+    void drawMaterialPropertiesSection(Material* material);
+    void drawTexturePropertiesSection(Texture* texture);
+    void drawMediumPropertiesSection(Medium* medium);
+
+    void drawObjectsWindow();
+    void drawMaterialsWindow();
+    void drawTexturesWindow();
+    void drawMediumsWindow();
+    void drawCameraWindow();
 
 public:
     Gui(Camera& camera, Scene& scene, unsigned width, unsigned height);

@@ -2,11 +2,12 @@
 #include <cmath>
 
 Homogeneous::Homogeneous(
+    const std::string name,
     const float ior,
     const Color sigma,
     const float density
 ):
-    Medium(ior),
+    Medium(name, ior),
     sigma(sigma),
     density(density) {}
 

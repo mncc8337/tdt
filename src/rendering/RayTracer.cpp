@@ -33,6 +33,12 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
         HitInfo rec = scene.getClosest(ray, obj);
         if(!obj) {
             // TODO: impl SkyBox class
+            float ncos = (ray.direction.dot(Vec3(0, 1, 0)) + 1.0f) / 2.0f;
+            Vec3 sky_color = Vec3(1.0f, 0.514f, 0.451f).lerp(
+                Vec3(1).lerp(Vec3(0.451f, 0.725f, 1.0f), ncos),
+                ncos
+            );
+            final_color += throughput * sky_color;
             break;
         }
 
