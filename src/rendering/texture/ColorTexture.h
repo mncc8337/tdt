@@ -7,7 +7,7 @@ private:
     Color color;
 
 public:
-    ColorTexture(Color color);
+    ColorTexture(const std::string name, Color color);
 
     Color get(const HitInfo& rec) const;
 

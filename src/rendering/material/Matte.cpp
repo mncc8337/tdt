@@ -2,8 +2,8 @@
 #include "misc/floatcmp.h"
 #include "misc/RNG.h"
 
-Matte::Matte(Texture* texture):
-    Material(texture, nullptr) {}
+Matte::Matte(const std::string name, Texture* texture):
+    Material(name, texture, nullptr) {}
 
 ScatterResult Matte::scatter(
     Ray& ray,

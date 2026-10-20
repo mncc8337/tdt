@@ -1,7 +1,9 @@
 #include "ColorTexture.h"
 #include "HitInfo.h"
 
-ColorTexture::ColorTexture(Color color): color(color) {}
+ColorTexture::ColorTexture(const std::string name, Color color):
+    Texture(name),
+    color(color) {}
 
 Color ColorTexture::get(const HitInfo& rec) const {
     return color;

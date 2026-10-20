@@ -33,6 +33,9 @@ public:
     const Medium*const& getGlobalMedium() const;
 
     const std::vector<std::unique_ptr<Hittable>>& getObjects() const;
+    const std::vector<std::unique_ptr<Material>>& getMaterials() const;
+    const std::vector<std::unique_ptr<Texture>>& getTextures() const;
+    const std::vector<std::unique_ptr<Medium>>& getMediums() const;
 
     HitInfo getClosest(const Ray& ray, Hittable*& obj) const;
 

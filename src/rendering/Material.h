@@ -13,11 +13,12 @@ enum class ScatterResult {
 
 class Material {
 protected:
+    std::string name;
     Texture* texture;
     Medium* medium;
 
 public:
-    Material(Texture* texture, Medium* medium);
+    Material(const std::string name, Texture* texture, Medium* medium);
 
     virtual ScatterResult scatter(
         Ray& ray,
@@ -27,6 +28,9 @@ public:
     ) const;
 
     virtual Color emitted(const HitInfo& rec) const;
+
+    std::string& getName();
+    const std::string& getName() const;
 
     Texture* getTexture() const;
     Medium* getMedium() const;

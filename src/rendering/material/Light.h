@@ -8,7 +8,7 @@ private:
     Color color;
 
 public:
-    Light(Texture* texture, const float emission_strength, const Color color);
+    Light(const std::string name, Texture* texture, const float emission_strength, const Color color);
 
     float& getEmissionStrength();
     const float& getEmissionStrength() const;

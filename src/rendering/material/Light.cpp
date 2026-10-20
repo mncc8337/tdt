@@ -1,7 +1,12 @@
 #include "Light.h"
 
-Light::Light(Texture* texture, const float emission_strength, const Color color):
-    Material(texture, nullptr),
+Light::Light(
+    const std::string name,
+    Texture* texture,
+    const float emission_strength,
+    const Color color
+):
+    Material(name, texture, nullptr),
     emission_strength(emission_strength),
     color(color) {}
 
