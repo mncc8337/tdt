@@ -10,9 +10,6 @@ private:
     std::vector<LinearBVHNode> flat_bvh;
     AABB aabb;
 
-    void init_bvh();
-    int flatten_bvh_tree(BVHNode* node, int& offset);
-
     AABB getLocalAABB() const override;
 
 public:
