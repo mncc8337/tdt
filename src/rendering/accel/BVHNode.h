@@ -79,7 +79,7 @@ struct BVHNode {
 
             std::sort(src_objects.begin() + start, src_objects.begin() + end, comparator);
 
-            auto mid = start + object_span / 2;
+            size_t mid = start + object_span / 2;
 
             left = new BVHNode(src_objects, start, mid);
             right = new BVHNode(src_objects, mid, end);
