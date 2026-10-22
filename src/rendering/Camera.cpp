@@ -30,11 +30,6 @@ Ray Camera::getRayAt(Vec2 uv, bool jitter) const {
             Vec2 defocus_jitter = RNG::pointInCircle(aperture / 2.0f);
             ray.origin += u * defocus_jitter.x + v * defocus_jitter.y;
         }
-        if(!fequal0(diverge_strength)) {
-            // offset viewpoint for anti-aliasing
-            Vec2 jitter = RNG::pointInCircle(diverge_strength);
-            ray.direction += u * jitter.x + v * jitter.y;
-        }
     }
 
     ray.direction.normalize();
@@ -64,14 +59,6 @@ float& Camera::getAperture() {
 
 const float& Camera::getAperture() const {
     return aperture;
-}
-
-float& Camera::getDivergeStrength() {
-    return diverge_strength;
-}
-
-const float& Camera::getDivergeStrength() const {
-    return diverge_strength;
 }
 
 const Vec3& Camera::getPosition() const {

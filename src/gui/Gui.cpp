@@ -454,13 +454,6 @@ void Gui::drawCameraWindow() {
         });
     }
 
-    float diverge_strength = camera.getDivergeStrength();
-    if(ImGui::DragFloat("Anti-Alias strength", &diverge_strength, 0.001f, 0.00f, 0.05f)) {
-        postEdit([this, diverge_strength]() {
-            camera.getDivergeStrength() = diverge_strength;
-        });
-    }
-
     Vec3 position = camera.getPosition();
     if(ImGui::DragFloat3("Position", &position[0], 0.05f)) {
         postEdit([this, position]() {
