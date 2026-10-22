@@ -35,6 +35,10 @@ Vec2 RNG::pointInCircle(const float radius) {
     return point_on_circle * sqrt(uniform() * radius);
 }
 
-Color RNG::color() {
+Vec3 RNG::vec3() {
     return Vec3(uniform(), uniform(), uniform());
+}
+
+Vec2 RNG::vec2() {
+    return Vec2(uniform());
 }

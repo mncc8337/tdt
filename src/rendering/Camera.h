@@ -9,7 +9,6 @@ private:
     float focal_length;
     float exposure = 1.0f;
     float aperture = 0.02f;
-    float diverge_strength = 0.001;
 
     Vec3 position;
     Vec3 lookat;

@@ -17,5 +17,6 @@ public:
     static Vec3 direction();
     static Vec3 directionFast();
     static Vec2 pointInCircle(const float radius = 1.0f);
-    static Color color();
+    static Vec3 vec3();
+    static Vec2 vec2();
 };

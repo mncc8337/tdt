@@ -102,22 +102,41 @@ void RayTracer::reset() {
 }
 
 void RayTracer::render(const Camera& camera, const Scene& scene, unsigned pass) {
-    float viewport_h = 2.0f; 
-    float viewport_w = viewport_h * ((float)viewport_width / viewport_height);
+    Vec2 world_viewport = Vec2(
+        2.0f * ((float)viewport_width / viewport_height),
+        2.0f
+    );
 
     // read once so every pixel of the pass uses the same exposure,
     // a change only takes effect on the next pass
     float exposure = camera.getExposure();
 
+    int spp_sqrt = std::max(1, int(std::sqrt(sample_per_pixel)));
+    int spp = spp_sqrt * spp_sqrt;
+    float inv_spp_sqrt = 1.0f / spp_sqrt;
+
     #pragma omp parallel for schedule(dynamic, 1)
     for(int j = 0; j < viewport_height; j++) {
         for(int i = 0; i < viewport_width; i++) {
-            float u = (i - viewport_width / 2.0f) / viewport_width;
-            float v = (j - viewport_height / 2.0f) / viewport_height;
+            Color accumulate = Color(0);
 
-            Ray ray = camera.getRayAt(Vec2(u * viewport_w, -v * viewport_h));
-            Color new_color = trace(ray, scene);
-            buffer[i + j * viewport_width] += new_color;
+            // stratified sampling
+            for(int sx = 0; sx < spp_sqrt; sx++) {
+                for(int sy = 0; sy < spp_sqrt; sy++) {
+                    Vec2 jitter = RNG::vec2();
+                    float su = (float(sx) + jitter.x) * inv_spp_sqrt;
+                    float sv = (float(sy) + jitter.y) * inv_spp_sqrt;
+                    Vec2 uv = Vec2(
+                        float(i + su) / viewport_width - 0.5f,
+                        float(j + sv) / viewport_height - 0.5f
+                    );
+
+                    uv.y *= -1;
+                    accumulate += trace(camera.getRayAt(uv * world_viewport), scene);
+                }
+            }
+
+            buffer[i + j * viewport_width] += accumulate / spp;
 
             Color display = buffer[i + j * viewport_width] / (pass + 1);
             gammaCorrect(exposureTonemap(display, exposure), 2.2f);

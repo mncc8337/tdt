@@ -11,7 +11,8 @@ private:
     unsigned viewport_width;
     unsigned viewport_height;
 
-    unsigned max_bounces = 50;
+    unsigned max_bounces = 10;
+    unsigned sample_per_pixel = 4;
 
     std::vector<Color> buffer;
     std::vector<std::uint32_t> pixels;
@@ -26,7 +27,6 @@ public:
 
     const Color trace(Ray ray, const Scene& scene) const;
 
-    // clears accumulated samples and starts accumulation over
     void reset();
 
     void render(const Camera& camera, const Scene& scene, unsigned pass);
