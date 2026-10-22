@@ -23,7 +23,6 @@
 #include "rendering/Medium.h"
 #include "rendering/medium/Homogeneous.h"
 #include "rendering/hittable/Mesh.h"
-#include "rendering/hittable/Triangle.h"
 #include "rendering/hittable/Sphere.h"
 
 Gui::Gui(Camera& camera, Scene& scene, unsigned width, unsigned height):

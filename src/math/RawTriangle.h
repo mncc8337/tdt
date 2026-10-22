@@ -2,7 +2,6 @@
 
 #include "Vec3.h"
 #include "Vec2.h"
-#include "Ray.h"
 
 struct RawTriangle {
     RawTriangle(
@@ -22,11 +21,4 @@ struct RawTriangle {
 
     Vec3 v0, v1, v2;
     Vec2 uv0, uv1, uv2;
-
-    bool hit(
-        const Ray& ray, 
-        float t_min, 
-        float t_max, 
-        Vec3& tuv
-    ) const;
 };

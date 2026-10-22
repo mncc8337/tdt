@@ -306,19 +306,6 @@ Các sơ đồ lớp dưới đây được xây dựng trực tiếp từ cấu
         )
       ), name: <mesh>),
 
-      node((1, 2), class(
-        "Triangle",
-        (
-          "- triangle: RawTriangle",
-        ),
-        (
-          "+ Triangle(name, material, v0, v1, v2)",
-          "+ hit(ray: Ray&): HitInfo",
-          "+ getAABB(): AABB",
-          "# getLocalAABB(): AABB",
-        )
-      ), name: <triangle>),
-
       node((0, 3.5), class(
         "RawTriangle",
         (
@@ -328,7 +315,6 @@ Các sơ đồ lớp dưới đây được xây dựng trực tiếp từ cấu
         (
           "+ RawTriangle(v0, v1, v2)",
           "+ RawTriangle(v0, v1, v2, uv0, uv1, uv2)",
-          "+ hit(ray, t_min, t_max, tuv): bool",
         )
       ), name: <rawtriangle>),
 
@@ -346,9 +332,7 @@ Các sơ đồ lớp dưới đây được xây dựng trực tiếp từ cấu
       edge(<transform>, <hittable>, marks: composition),
       edge(<sphere>, <hittable>, marks: inheritance),
       edge(<mesh>, <hittable>, marks: inheritance),
-      edge(<triangle>, <hittable>, marks: inheritance),
       edge(<rawtriangle>, <mesh>, marks: composition),
-      edge(<rawtriangle>, <triangle>, marks: composition),
       edge(<mesh>, <linearbvh>, marks: composition, bend: -12deg),
     )
   ]
@@ -357,9 +341,8 @@ Các sơ đồ lớp dưới đây được xây dựng trực tiếp từ cấu
 Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượng `Hittable`. Mỗi vật thể lưu một `Transform` (gồm tỉ lệ, ma trận quay `Mat3x3`, góc quay và vị trí) cùng con trỏ tới `Material`. Lớp này khai báo hai phương thức thuần ảo `hit()` và `getLocalAABB()`; các lớp dẫn xuất chỉ cần cài đặt phép giao cắt trong không gian cục bộ, còn `getAABB()` sẽ áp dụng `Transform` để trả về hộp bao trong không gian thế giới.
 
 - `Sphere` lưu tâm và bán kính, phù hợp cho các vật thể tròn cơ bản.
-- `Triangle` bọc một `RawTriangle`, là đơn vị hình học nhỏ nhất của lưới.
-- `Mesh` quản lý một danh sách `RawTriangle` và một BVH phẳng (`LinearBVHNode`) để tăng tốc truy vấn giao cắt trên lưới lớn.
-- `RawTriangle` cài đặt thuật toán Moller–Trumbore để kiểm tra giao cắt tia–tam giác và nội suy tọa độ `uv`.
+- `Mesh` quản lý một danh sách `RawTriangle` và một BVH phẳng (`LinearBVHNode`) để tăng tốc truy vấn giao cắt trên lưới lớn, đồng thời cài đặt thuật toán Moller–Trumbore để kiểm tra giao cắt tia–tam giác và nội suy tọa độ `uv`.
+- `RawTriangle` chỉ lưu hình học (các đỉnh và tọa độ kết cấu), không chứa logic giao cắt.
 
 #figure(
   block(breakable: false, width: 100%)[
@@ -639,7 +622,6 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
         (
           "+ RawTriangle(v0, v1, v2)",
           "+ RawTriangle(v0, v1, v2, uv0, uv1, uv2)",
-          "+ hit(ray, t_min, t_max, tuv): bool",
         )
       ), name: <rawtriangle>),
 
@@ -724,7 +706,7 @@ Thay vì duyệt tuyến tính qua toàn bộ danh sách vật thể để tìm 
 === Thuật toán truy vấn giao cắt
 Khi một tia được bắn ra, chương trình chỉ cần kiểm tra xem tia đó có cắt qua hộp bao AABB của nút gốc hay không:
 - Nếu *không cắt*: Bỏ qua hoàn toàn việc kiểm tra nhánh cây đó, giúp tiết kiệm lượng lớn phép tính.
-- Nếu *có cắt*: Tiếp tục đệ quy kiểm tra xuống hai nút con. Quá trình lặp lại cho tới khi chạm đến nút lá, lúc này thuật toán mới tiến hành kiểm tra giao cắt chi tiết với từng hình học (Sphere, Triangle, Mesh) nằm trong nút lá đó.
+- Nếu *có cắt*: Tiếp tục đệ quy kiểm tra xuống hai nút con. Quá trình lặp lại cho tới khi chạm đến nút lá, lúc này thuật toán mới tiến hành kiểm tra giao cắt chi tiết với từng hình học (Sphere, Mesh) nằm trong nút lá đó.
 
 = Thuật toán
 == Thuật toán dò tia cơ bản.
@@ -947,7 +929,7 @@ $ t = (arrow(e)_2 dot arrow(q)_"vec") / "det" $
 
 Cuối cùng, giao điểm chỉ được chấp nhận nếu $t_min <= t <= t_max$.
 
-Thuật toán không loại bỏ mặt sau: `det` có thể âm, và điều này là cần thiết để phát hiện giao cắt từ cả hai phía của tam giác. Sau khi `RawTriangle::hit` trả về $t$, $u$, $v$, lớp `Triangle` tính pháp tuyến ngoài:
+Thuật toán không loại bỏ mặt sau: `det` có thể âm, và điều này là cần thiết để phát hiện giao cắt từ cả hai phía của tam giác. Sau khi tính được $t$, $u$, $v$, `Mesh` tính pháp tuyến ngoài:
 
 $ arrow(n)_"out" = "normalize"(arrow(e)_1 times arrow(e)_2) $
 
