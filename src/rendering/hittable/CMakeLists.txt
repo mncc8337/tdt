@@ -1,7 +1,6 @@
 target_sources(tdt
   PRIVATE 
     Sphere.cpp
-    Triangle.cpp
     Mesh.cpp
 )
 

@@ -1,4 +1,5 @@
 #include "Mesh.h"
+#include "floatcmp.h"
 #include "misc/meshloader.h"
 
 Mesh::Mesh(const std::string name, Material* material, const std::vector<RawTriangle>& src_tris):
@@ -31,32 +32,46 @@ HitInfo Mesh::hit(const Ray& ray) const {
     auto hitFunc = [&](const int primitive_idx, HitInfo& current_closest) {
         const auto& tri = tris[primitive_idx];
 
-        Vec3 tuv;
         float tri_t_max = DID_HIT(current_closest) ? current_closest.distance : FAR_DISTANCE;
-        if(tri.hit(local_ray, EPSILON, tri_t_max, tuv)) {
-            current_closest.distance = tuv.x;
-            current_closest.hit_point = local_ray.point(tuv.x);
 
-            Vec3 edge1 = tri.v1 - tri.v0;
-            Vec3 edge2 = tri.v2 - tri.v0;
-            Vec3 outward_normal = edge1.cross(edge2).normalized();
+        Vec3 edge1 = tri.v1 - tri.v0;
+        Vec3 edge2 = tri.v2 - tri.v0;
 
-            current_closest.front_face = local_ray.direction.dot(outward_normal) < 0.0f;
-            current_closest.normal = current_closest.front_face ? outward_normal : -outward_normal;
+        Vec3 pvec = local_ray.direction.cross(edge2);
+        float det = edge1.dot(pvec);
+        if(fequal0(det)) return;
 
-            float u = tuv.y;
-            float v = tuv.z;
-            float w = 1.0f - u - v;
-            current_closest.uv.x = w * tri.uv0.x + u * tri.uv1.x + v * tri.uv2.x;
-            current_closest.uv.y = w * tri.uv0.y + u * tri.uv1.y + v * tri.uv2.y;
-        }
+        float inv_det = 1.0f / det;
+        Vec3 tvec = local_ray.origin - tri.v0;
+
+        float u = tvec.dot(pvec) * inv_det;
+        if(u < 0.0f || u > 1.0f) return;
+
+        Vec3 qvec = tvec.cross(edge1);
+        float v = local_ray.direction.dot(qvec) * inv_det;
+        if(v < 0.0f || u + v > 1.0f) return;
+
+        float dist = edge2.dot(qvec) * inv_det;
+        if(dist < EPSILON or dist > tri_t_max) return;
+
+        current_closest.distance = dist;
+        current_closest.hit_point = local_ray.point(dist);
+
+        Vec3 outward_normal = edge1.cross(edge2).normalized();
+
+        current_closest.front_face = local_ray.direction.dot(outward_normal) < 0.0f;
+        current_closest.normal = current_closest.front_face ? outward_normal : -outward_normal;
+
+        float w = 1.0f - u - v;
+        current_closest.uv.x = w * tri.uv0.x + u * tri.uv1.x + v * tri.uv2.x;
+        current_closest.uv.y = w * tri.uv0.y + u * tri.uv1.y + v * tri.uv2.y;
     };
 
     HitInfo closest_hit = BVHNode::traverse(flat_bvh, local_ray, hitFunc);
 
     if(DID_HIT(closest_hit)) {
         closest_hit.material = material;
-        // voncert to world space coordinates
+        // convert to world space coordinates
         closest_hit.hit_point = transform.pointApply(closest_hit.hit_point);
         // project the hp-origin vector to the ray direction
         // since ray direction is normalized, it simply equals to its world space distance
