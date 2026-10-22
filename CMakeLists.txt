@@ -52,7 +52,11 @@ find_package(OpenMP REQUIRED)
 
 add_executable(tdt)
 
-target_compile_features(tdt PRIVATE cxx_std_20)
+set_target_properties(tdt PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+)
 
 target_link_libraries(tdt
     PRIVATE

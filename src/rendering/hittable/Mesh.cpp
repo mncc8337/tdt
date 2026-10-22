@@ -4,6 +4,7 @@
 Mesh::Mesh(const std::string name, Material* material, const std::vector<RawTriangle>& src_tris):
     Hittable(name, material), tris(src_tris) {
     if(tris.empty()) return;
+    computeAABB();
     BVHNode::build(flat_bvh, tris, tris.size());
 }
 
@@ -11,7 +12,15 @@ Mesh::Mesh(const std::string name, Material* material, std::string filename):
     Hittable(name, material) {
     loadMeshFrom(filename, tris);
     if(tris.empty()) return;
+    computeAABB();
     BVHNode::build(flat_bvh, tris, tris.size());
+}
+
+void Mesh::computeAABB() {
+    aabb = getNodeAABB(tris[0]);
+    for(size_t i = 1; i < tris.size(); i++) {
+        aabb.extend(getNodeAABB(tris[i]));
+    }
 }
 
 HitInfo Mesh::hit(const Ray& ray) const {

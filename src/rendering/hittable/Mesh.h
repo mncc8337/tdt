@@ -11,6 +11,7 @@ private:
     AABB aabb;
 
     AABB getLocalAABB() const override;
+    void computeAABB();
 
 public:
     Mesh(const std::string name, Material* material, const std::vector<RawTriangle>& tris);
