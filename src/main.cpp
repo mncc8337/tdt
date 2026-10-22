@@ -65,12 +65,11 @@ int main() {
         "assets/model/stanford-bunny.obj"
     )).getTransform().rotate(Vec3(0.0f, 0.17f, 0.0f)).move(Vec3(-1.05f, 0.0f, 0.0f));
 
-    // scene.addObject(std::make_unique<Sphere>(
-    //     "light",
-    //     &light_mat,
-    //     Vec3(0),
-    //     7.61f
-    // )).getTransform().move(Vec3(15.35f, 15.4f, -9.0f));
+    scene.addObject(std::make_unique<Sphere>(
+        "light",
+        &light_mat,
+        7.61f
+    )).getTransform().move(Vec3(15.35f, 15.4f, -9.0f));
 
     scene.buildBVH();
 

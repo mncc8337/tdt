@@ -5,11 +5,9 @@
 Sphere::Sphere(
     const std::string name,
     Material* material,
-    const Vec3& center,
     float radius
 ):
     Hittable(name, material),
-    center(center),
     radius(radius) {}
 
 HitInfo Sphere::hit(const Ray& ray) const {
@@ -19,7 +17,7 @@ HitInfo Sphere::hit(const Ray& ray) const {
     local_ray.origin = transform.pointApplyInverse(local_ray.origin);
     local_ray.direction = transform.dirApplyInverse(local_ray.direction);
 
-    Vec3 offset_origin = local_ray.origin - center;
+    Vec3 offset_origin = local_ray.origin  /* - center */;
 
     float a = local_ray.direction.length_squared();
     float half_b = -offset_origin.dot(local_ray.direction);
@@ -50,7 +48,7 @@ HitInfo Sphere::hit(const Ray& ray) const {
     info.distance = dist;
     info.hit_point = local_ray.point(dist);
 
-    Vec3 outward_normal = (info.hit_point - center) / radius;
+    Vec3 outward_normal = (info.hit_point /* - center */) / radius;
     info.front_face = local_ray.direction.dot(outward_normal) < 0;
 
     if(info.front_face)
@@ -67,7 +65,7 @@ HitInfo Sphere::hit(const Ray& ray) const {
 }
 
 AABB Sphere::getLocalAABB() const {
-    return AABB({center + Vec3(radius), center - Vec3(radius)});
+    return AABB({/* center + */ Vec3(radius), /* center */ - Vec3(radius)});
 }
 
 float& Sphere::getRadius() {
