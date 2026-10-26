@@ -98,6 +98,6 @@ int main() {
 
     scene.buildBVH();
 
-    Gui gui(camera, scene, 800, 600);
+    Gui gui(camera, scene, 100, 100);
     gui.run();
 }
