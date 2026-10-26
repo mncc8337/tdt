@@ -30,7 +30,11 @@ private:
 
     std::thread render_thread;
     std::atomic<bool> is_running{false};
+    std::atomic<bool> is_paused{false};
     std::atomic<bool> is_data_ready{false};
+
+    int total_time = 0;
+    int last_dt = 0;
 
     // the GUI never waits on the scene: edits are queued and applied
     // only when try_lock() can take scene_mutex without blocking. while
@@ -38,7 +42,7 @@ private:
     // off re-acquiring the mutex for its next pass, so the queued edits
     // get their chance instead of racing it every time.
     std::atomic<bool> lock_requested{false};
-    std::vector<std::function<void()>> pending_edits;
+    std::vector<std::function<void()>> pending_actions;
     std::mutex scene_mutex;
 
     bool dirty_geometry = false;
@@ -46,8 +50,6 @@ private:
     // finished frame, published by the render thread only while
     // is_data_ready is false and read by the GUI only while it is true
     std::vector<std::uint32_t> front_pixels;
-
-    unsigned pass = 0;
 
     Hittable* selected_object = nullptr;
     Material* selected_material = nullptr;
@@ -58,8 +60,10 @@ private:
 
     std::string getTypeName(const std::type_info& ti);
 
-    void postEdit(std::function<void()> edit);
-    void applyPendingEdits();
+    void postAction(std::function<void()> action);
+    void applyPendingActions();
+
+    void fitSprite();
 
     void renderRoutine();
     void handlePicking();
@@ -74,6 +78,7 @@ private:
     void drawTexturesWindow();
     void drawMediumsWindow();
     void drawCameraWindow();
+    void drawTracerWindow();
 
 public:
     Gui(Camera& camera, Scene& scene, unsigned width, unsigned height);

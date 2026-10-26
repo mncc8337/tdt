@@ -15,7 +15,52 @@ RayTracer::RayTracer(
     viewport_width(viewport_width),
     viewport_height(viewport_height),
     buffer(viewport_width * viewport_height),
-    pixels(viewport_width * viewport_height) {}
+    pixels(viewport_width * viewport_height),
+    pass(0){}
+
+const unsigned& RayTracer::getPass() const {
+    return pass;
+}
+
+const unsigned& RayTracer::getViewportWidth() const {
+    return viewport_width;
+}
+
+void RayTracer::setViewportWidth(unsigned vw) {
+    viewport_width = vw;
+    buffer.resize(viewport_width * viewport_height);
+    pixels.resize(viewport_width * viewport_height);
+    reset();
+}
+
+const unsigned& RayTracer::getViewportHeight() const {
+    return viewport_height;
+}
+
+void RayTracer::setViewportHeight(unsigned vh) {
+    viewport_height = vh;
+    buffer.resize(viewport_width * viewport_height);
+    pixels.resize(viewport_width * viewport_height);
+    reset();
+}
+
+const unsigned& RayTracer::getMaxBounces() const {
+    return max_bounces;
+}
+
+void RayTracer::setMaxBounces(unsigned mb) {
+    max_bounces = mb;
+    reset();
+}
+
+const unsigned& RayTracer::getSamplesPerPixel() const {
+    return samples_per_pixel;
+}
+
+void RayTracer::setSamplesPerPixel(unsigned spp) {
+    samples_per_pixel = spp;
+    reset();
+}
 
 const std::uint8_t* RayTracer::getData() const {
     return reinterpret_cast<const std::uint8_t*>(pixels.data());
@@ -59,12 +104,12 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
             rec,
             *current_medium
         );
-        if(result == ScatterResult::Terminated)
+
+        if(result == ScatterResult::Terminated) {
             break;
-
-        throughput *= surface_attenuation;
-
-        if(result == ScatterResult::Refracted) {
+        } else if(result == ScatterResult::Scattered) {
+            throughput *= surface_attenuation;
+        } else if(result == ScatterResult::Refracted) {
             Medium* object_medium = rec.material->getMedium();
             if(object_medium) {
                 if(rec.front_face) {
@@ -77,8 +122,6 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
 
         // russian roulette
         if(bounces > 3) {
-            // randomly kill rays. rays with higher throughput
-            // is less likely to be killed
             float max_channel = std::max({
                 throughput.x,
                 throughput.y,
@@ -87,8 +130,6 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
             if (RNG::uniform() > max_channel) {
                 break;
             }
-            // raise survivied rays' energy by the
-            // inverse of the probability of being killed
             throughput /= max_channel; 
         }
     }
@@ -99,9 +140,10 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
 void RayTracer::reset() {
     std::fill(buffer.begin(), buffer.end(), Color(0));
     std::fill(pixels.begin(), pixels.end(), 0);
+    pass = 0;
 }
 
-void RayTracer::render(const Camera& camera, const Scene& scene, unsigned pass) {
+void RayTracer::render(const Camera& camera, const Scene& scene) {
     Vec2 world_viewport = Vec2(
         2.0f * ((float)viewport_width / viewport_height),
         2.0f
@@ -111,7 +153,7 @@ void RayTracer::render(const Camera& camera, const Scene& scene, unsigned pass) 
     // a change only takes effect on the next pass
     float exposure = camera.getExposure();
 
-    int spp_sqrt = std::max(1, int(std::sqrt(sample_per_pixel)));
+    int spp_sqrt = std::max(1, int(std::sqrt(samples_per_pixel)));
     int spp = spp_sqrt * spp_sqrt;
     float inv_spp_sqrt = 1.0f / spp_sqrt;
 
@@ -143,4 +185,6 @@ void RayTracer::render(const Camera& camera, const Scene& scene, unsigned pass) 
             pixels[i + j * viewport_width] = display.toABGR();
         }
     }
+
+    pass++;
 }
