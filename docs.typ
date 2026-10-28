@@ -840,7 +840,7 @@ Nhờ đó, thuật toán Moller–Trumbore bên dưới chỉ làm việc với
 
 $ arrow(e)_1 = arrow(v)_1 - arrow(v)_0, quad arrow(e)_2 = arrow(v)_2 - arrow(v)_0 $
 
-Mọi điểm trên tam giác có thể biểu diễn theo tọa độ trọng tâm:
+Mọi điểm trên tam giác có thể biểu diễn theo tọa độ tỉ cự:
 
 $ arrow(p) = arrow(v)_0 + u arrow(e)_1 + v arrow(e)_2, quad u >= 0, v >= 0, u + v <= 1 $
 
