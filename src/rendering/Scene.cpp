@@ -1,6 +1,7 @@
 #include "Scene.h"
 #include "BVHNode.h"
 #include "Material.h"
+#include <memory>
 
 Hittable& Scene::addObject(std::unique_ptr<Hittable> object) {
     objects.push_back(std::move(object));
@@ -62,9 +63,15 @@ HitInfo Scene::getClosest(const Ray& ray, Hittable*& obj) const {
         }
     };
 
-    return BVHNode::traverse(flat_bvh, ray, hitFunc);
+    if(!bvh_root) return {};
+
+    return bvh_root->traverse(ray, hitFunc);
 }
 
 void Scene::buildBVH() {
-    BVHNode::build(flat_bvh, objects, objects.size());
+    if(objects.empty()) {
+        bvh_root.reset();
+        return;
+    }
+    bvh_root = std::make_unique<BVHNode>(objects, 0, objects.size());
 }

@@ -33,8 +33,9 @@ private:
     std::atomic<bool> is_paused{false};
     std::atomic<bool> is_data_ready{false};
 
-    int total_time = 0;
-    int last_dt = 0;
+    unsigned total_time = 0;
+    unsigned last_dt = 0;
+    unsigned target_frame = 0;
 
     // the GUI never waits on the scene: edits are queued and applied
     // only when try_lock() can take scene_mutex without blocking. while

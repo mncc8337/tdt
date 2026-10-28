@@ -17,9 +17,7 @@ private:
 
     Medium* global_medium;
 
-    std::vector<LinearBVHNode> flat_bvh;
-
-    int flattenBVH(BVHNode* node, int& offset);
+    std::unique_ptr<BVHNode> bvh_root;
 
 public:
     Hittable& addObject(std::unique_ptr<Hittable> object);

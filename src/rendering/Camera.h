@@ -43,5 +43,5 @@ public:
 
     void lookAt(const Vec3& v);
 
-    Ray getRayAt(Vec2 uv, bool jitter = true) const;
+    Ray getRayAt(Vec2 uv) const;
 };

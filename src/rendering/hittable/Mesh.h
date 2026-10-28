@@ -7,7 +7,7 @@
 class Mesh: public Hittable {
 private:
     std::vector<RawTriangle> tris;
-    std::vector<LinearBVHNode> flat_bvh;
+    std::unique_ptr<BVHNode> bvh_root;
     AABB aabb;
 
     AABB getLocalAABB() const override;

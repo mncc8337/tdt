@@ -1,58 +1,32 @@
 #include "accel/BVHNode.h"
+#include <queue>
 
-int BVHNode::flatten(
-    std::vector<LinearBVHNode>& flat_bvh,
-    BVHNode* node,
-    int& offset
-) {
-    LinearBVHNode* linear_node = &flat_bvh[offset];
-    linear_node->aabb = node->aabb;
-
-    int my_offset = offset++;
-
-    if(node->leaf_node) {
-        linear_node->primitives_offset = node->start_index;
-        linear_node->num_objects = node->num_objects;
-    } else {
-        linear_node->num_objects = 0;
-        linear_node->axis = node->axis;
-        int l = flatten(flat_bvh, node->left, offset);
-        int r = flatten(flat_bvh, node->right, offset);
-        linear_node->right_offset = r;
-    }
-    return my_offset;
+bool BVHNode::isLeaf() const {
+    return !left and !right;
 }
 
 HitInfo BVHNode::traverse(
-    const std::vector<LinearBVHNode>& flat_bvh,
     const Ray& ray,
     std::function<void(const int, HitInfo&)> hitFunc
-) {
+) const {
     HitInfo closest_hit;
-    if (flat_bvh.empty()) return closest_hit;
 
-    int nodes_to_visit[64];
-    int to_visit_offset = 0;
-    int current_node_index = 0;
+    std::queue<const BVHNode*> node_queue;
+    node_queue.push(this);
 
-    while(true) {
-        const LinearBVHNode& node = flat_bvh[current_node_index];
+    while(!node_queue.empty()) {
+        const BVHNode* current_node = node_queue.front();
+        node_queue.pop();
 
         float t_max = DID_HIT(closest_hit) ? closest_hit.distance : FAR_DISTANCE;
-        if(node.aabb.hit(ray, EPSILON, t_max)) {
-            if(node.num_objects > 0) {
-                for(int i = 0; i < node.num_objects; ++i)
-                    hitFunc(node.primitives_offset + i, closest_hit);
-
-                if (to_visit_offset == 0) break;
-                current_node_index = nodes_to_visit[--to_visit_offset];
-            } else {
-                nodes_to_visit[to_visit_offset++] = node.right_offset;
-                current_node_index = current_node_index + 1;
+        if(current_node->aabb.hit(ray, EPSILON, t_max)) {
+            if(!current_node->isLeaf()) {
+                node_queue.push(current_node->left.get());
+                node_queue.push(current_node->right.get());
+            } else if(current_node->num_objects > 0) {
+                for(int i = 0; i < current_node->num_objects; i++)
+                    hitFunc(current_node->start_index + i, closest_hit);
             }
-        } else {
-            if(to_visit_offset == 0) break;
-            current_node_index = nodes_to_visit[--to_visit_offset];
         }
     }
     return closest_hit;
