@@ -19,17 +19,15 @@ void Camera::computeOrientation() {
     v = w.cross(u);
 }
 
-Ray Camera::getRayAt(Vec2 uv, bool jitter) const {
+Ray Camera::getRayAt(Vec2 uv) const {
     Ray ray;
     ray.origin = position;
     ray.direction = focal_length * w + uv.x * u + uv.y * v;
 
-    if(jitter) {
-        if(!fequal0(aperture)) {
-            // offset ray origin for defocus effect
-            Vec2 defocus_jitter = RNG::pointInCircle(aperture / 2.0f);
-            ray.origin += u * defocus_jitter.x + v * defocus_jitter.y;
-        }
+    if(!fequal0(aperture)) {
+        // offset ray origin for defocus effect
+        Vec2 defocus_jitter = RNG::pointInCircle(aperture / 2.0f);
+        ray.origin += u * defocus_jitter.x + v * defocus_jitter.y;
     }
 
     ray.direction.normalize();

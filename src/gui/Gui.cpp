@@ -162,6 +162,10 @@ void Gui::renderRoutine() {
         last_dt = delta_clock.restart().asMilliseconds();
         total_time += last_dt;
         std::clog << "\r#" << tracer.getPass() << " dt: " << last_dt << "ms   " << std::flush;
+
+        if(target_frame > 0 and tracer.getPass() >= target_frame) {
+            is_paused = true;
+        }
     }
 
     if(unsigned pass = tracer.getPass())
@@ -519,7 +523,7 @@ void Gui::drawTracerWindow() {
 
     ImGui::Separator();
 
-    int pass = tracer.getPass();
+    unsigned pass = tracer.getPass();
     if(pass > 0) {
         ImGui::Text("frame #%d, dt %d ms", pass - 1, last_dt);
         ImGui::Text("total: %dms", total_time);
@@ -528,6 +532,12 @@ void Gui::drawTracerWindow() {
         ImGui::Text("frame #0, dt n/a");
         ImGui::Text("total: n/a");
         ImGui::Text("mean dt: n/a");
+    }
+
+    static bool limit_frame = false;
+    ImGui::Checkbox("Limit frame count", &limit_frame);
+    if(limit_frame) {
+        ImGui::SameLine();
     }
 
     ImGui::Separator();

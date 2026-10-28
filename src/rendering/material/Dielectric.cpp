@@ -27,10 +27,12 @@ ScatterResult Dielectric::scatter(
     }
 
     float cos_theta = std::min(-dir.dot(rec.normal), 1.0f);
-    bool should_reflect = reflectance(cos_theta, ior_ratio) > RNG::uniform();
-    bool cannot_refract = ior_ratio * ior_ratio * (1.0 - cos_theta * cos_theta) > 1.0;
+    bool reflected = ior_ratio * ior_ratio * (1.0 - cos_theta * cos_theta) > 1.0;
+    // avoid calculating reflectance propability if the ray already can reflect
+    if(!reflected)
+        reflected = reflectance(cos_theta, ior_ratio) > RNG::uniform();
 
-    if((cannot_refract or should_reflect) and !fequal(ior_ratio, 1.0f)) {
+    if(!fequal(ior_ratio, 1.0f) and reflected) {
         // reflection keeps the ray in its current medium
         ray.direction = dir.reflection(rec.normal);
         ray.origin = rec.hit_point + rec.normal * RAY_ORIGIN_OFFSET;

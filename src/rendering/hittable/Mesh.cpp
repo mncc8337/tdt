@@ -6,7 +6,7 @@ Mesh::Mesh(const std::string name, Material* material, const std::vector<RawTria
     Hittable(name, material), tris(src_tris) {
     if(tris.empty()) return;
     computeAABB();
-    BVHNode::build(flat_bvh, tris, tris.size());
+    bvh_root = std::make_unique<BVHNode>(tris, 0, tris.size());
 }
 
 Mesh::Mesh(const std::string name, Material* material, std::string filename):
@@ -14,7 +14,7 @@ Mesh::Mesh(const std::string name, Material* material, std::string filename):
     loadMeshFrom(filename, tris);
     if(tris.empty()) return;
     computeAABB();
-    BVHNode::build(flat_bvh, tris, tris.size());
+    bvh_root = std::make_unique<BVHNode>(tris, 0, tris.size());
 }
 
 void Mesh::computeAABB() {
@@ -25,6 +25,8 @@ void Mesh::computeAABB() {
 }
 
 HitInfo Mesh::hit(const Ray& ray) const {
+    if(!bvh_root) return {};
+
     Ray local_ray = ray;
     local_ray.origin = transform.pointApplyInverse(local_ray.origin);
     local_ray.direction = transform.dirApplyInverse(local_ray.direction);
@@ -67,7 +69,7 @@ HitInfo Mesh::hit(const Ray& ray) const {
         current_closest.uv.y = w * tri.uv0.y + u * tri.uv1.y + v * tri.uv2.y;
     };
 
-    HitInfo closest_hit = BVHNode::traverse(flat_bvh, local_ray, hitFunc);
+    HitInfo closest_hit = bvh_root->traverse(local_ray, hitFunc);
 
     if(DID_HIT(closest_hit)) {
         closest_hit.material = material;
