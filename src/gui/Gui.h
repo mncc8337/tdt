@@ -35,7 +35,7 @@ private:
 
     unsigned total_time = 0;
     unsigned last_dt = 0;
-    unsigned target_frame = 0;
+    unsigned target_frame = 100;
 
     // the GUI never waits on the scene: edits are queued and applied
     // only when try_lock() can take scene_mutex without blocking. while

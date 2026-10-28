@@ -163,7 +163,7 @@ void Gui::renderRoutine() {
         total_time += last_dt;
         std::clog << "\r#" << tracer.getPass() << " dt: " << last_dt << "ms   " << std::flush;
 
-        if(target_frame > 0 and tracer.getPass() >= target_frame) {
+        if(target_frame > 0 and tracer.getPass() > target_frame) {
             is_paused = true;
         }
     }
@@ -500,7 +500,8 @@ void Gui::drawTracerWindow() {
     ImGui::Begin("Tracer");
 
     if(ImGui::Button(is_paused ? "Resume" : "Pause")) {
-        is_paused = !is_paused;
+        if(target_frame == 0 or tracer.getPass() <= target_frame)
+            is_paused = !is_paused;
     }
 
     ImGui::SameLine();
@@ -534,10 +535,16 @@ void Gui::drawTracerWindow() {
         ImGui::Text("mean dt: n/a");
     }
 
-    static bool limit_frame = false;
+    static bool limit_frame = true;
     ImGui::Checkbox("Limit frame count", &limit_frame);
     if(limit_frame) {
-        ImGui::SameLine();
+        static int tf = target_frame;
+        ImGui::InputInt("Target frame", &tf, 10, 100);
+        if(tf < 0) tf = 0;
+        is_paused = tf <= tracer.getPass();
+        target_frame = tf;
+    } else {
+        target_frame = 0;
     }
 
     ImGui::Separator();
