@@ -162,7 +162,7 @@ Các sơ đồ lớp dưới đây được xây dựng trực tiếp từ cấu
           ),
           (
             "+ Camera(focal_length, position, lookat)",
-            "+ getRayAt(uv: Vec2): Ray",
+            "+ getRayAt(uv: Vec2, jitter: bool = true): Ray",
             "+ lookAt(v: const Vec3&)",
             "- computeOrientation()",
           )
@@ -1039,7 +1039,7 @@ trong đó $f$ là `focal_length` và $(arrow(w), arrow(u), arrow(v))$ là các 
 - Vì mỗi mẫu nằm ở một vị trí khác nhau trong pixel, biên vật thể được lấy trung bình theo độ phủ thực để khử răng cưa (anti-aliasing). Cách chia lưới rồi lấy ngẫu nhiên trong từng ô là lấy mẫu phân tầng (stratified sampling), giúp giảm phương sai so với chọn hoàn toàn ngẫu nhiên.
 
 ==== Khẩu độ và độ sâu trường ảnh
-Khi gọi `Camera::getRayAt()` với `aperture > 0`, hàm dịch gốc tia trong mặt phẳng khẩu độ sinh bởi hai vector cơ sở $arrow(u)$ và $arrow(v)$ bằng một offset ngẫu nhiên. Gọi $(Delta u, Delta v)$ = `RNG::pointInCircle(aperture/3)` và gọi $arrow(o)$ là gốc tia trước khi dịch; gốc mới $arrow(o)'$ là:
+Khi gọi `Camera::getRayAt()` với `aperture > 0` và `jitter = true`, hàm dịch gốc tia trong mặt phẳng khẩu độ sinh bởi hai vector cơ sở $arrow(u)$ và $arrow(v)$ bằng một offset ngẫu nhiên. Gọi $(Delta u, Delta v)$ = `RNG::pointInCircle(aperture/3)` và gọi $arrow(o)$ là gốc tia trước khi dịch; gốc mới $arrow(o)'$ là:
 
 $ arrow(o)' = arrow(o) + Delta u arrow(u) + Delta v arrow(v) $
 
