@@ -1,4 +1,5 @@
 #include "Mesh.h"
+#include "dsa/BVHNode.h"
 #include "floatcmp.h"
 #include "misc/meshloader.h"
 
@@ -6,7 +7,7 @@ Mesh::Mesh(const std::string name, Material* material, const std::vector<RawTria
     Hittable(name, material), tris(src_tris) {
     if(tris.empty()) return;
     computeAABB();
-    bvh_root = std::make_unique<BVHNode>(tris, 0, tris.size());
+    bvh_root = std::make_unique<BVHNode<RawTriangle>>(tris, 0, tris.size());
 }
 
 Mesh::Mesh(const std::string name, Material* material, std::string filename):
@@ -14,7 +15,7 @@ Mesh::Mesh(const std::string name, Material* material, std::string filename):
     loadMeshFrom(filename, tris);
     if(tris.empty()) return;
     computeAABB();
-    bvh_root = std::make_unique<BVHNode>(tris, 0, tris.size());
+    bvh_root = std::make_unique<BVHNode<RawTriangle>>(tris, 0, tris.size());
 }
 
 void Mesh::computeAABB() {

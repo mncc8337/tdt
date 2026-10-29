@@ -1,5 +1,4 @@
 #include "Scene.h"
-#include "BVHNode.h"
 #include "Material.h"
 #include <memory>
 
@@ -74,5 +73,5 @@ void Scene::buildBVH() {
         return;
     }
 
-    bvh_root = std::make_unique<BVHNode>(objects, 0, objects.size());
+    bvh_root = std::make_unique<BVHNode<std::unique_ptr<Hittable>>>(objects, 0, objects.size());
 }

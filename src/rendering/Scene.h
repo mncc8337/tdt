@@ -5,7 +5,7 @@
 
 #include "Texture.h"
 #include "Medium.h"
-#include "accel/BVHNode.h"
+#include "dsa/BVHNode.h"
 
 class Scene {
 private:
@@ -16,7 +16,7 @@ private:
 
     Medium* global_medium = nullptr;
 
-    std::unique_ptr<BVHNode> bvh_root = nullptr;
+    std::unique_ptr<BVHNode<std::unique_ptr<Hittable>>> bvh_root = nullptr;
 
 public:
     Hittable& addObject(std::unique_ptr<Hittable> object);
