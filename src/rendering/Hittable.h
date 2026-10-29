@@ -11,7 +11,12 @@ protected:
     Transform transform;
     Material* material;
 
-    virtual AABB getLocalAABB() const = 0;
+    AABB local_aabb;
+    AABB global_aabb;
+
+    virtual AABB calculateLocalAABB() const = 0;
+    AABB calculateGlobalAABB() const;
+    void recomputeAABB();
 
 public:
     Hittable(const std::string name, Material* material);
@@ -20,7 +25,6 @@ public:
     virtual AABB getAABB() const;
 
     const Transform& getTransform() const;
-    // FIXME: this func allows user to set the object transform without the scene knowing
     void setTransform(const Transform t);
 
     Material* getMaterial() const;

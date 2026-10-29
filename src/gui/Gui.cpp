@@ -255,7 +255,7 @@ void Gui::drawObjectPropertiesSection(Hittable* object) {
         float radius = sphere->getRadius();
         if(ImGui::DragFloat("Radius", &radius, 0.01f, 0.001f, 1000.0f)) {
             postAction([this, sphere, radius]() {
-                sphere->getRadius() = radius;
+                sphere->setRadius(radius);
                 dirty_geometry = true;
             });
         }

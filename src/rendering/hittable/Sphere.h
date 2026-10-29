@@ -7,7 +7,7 @@ class Sphere : public Hittable {
 private:
     float radius;
 
-    AABB getLocalAABB() const override;
+    AABB calculateLocalAABB() const override;
 
 public:
     Sphere(
@@ -18,5 +18,6 @@ public:
 
     HitInfo hit(const Ray& ray) const override;
 
-    float& getRadius();
+    const float& getRadius() const;
+    void setRadius(const float r);
 };
