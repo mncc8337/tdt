@@ -202,9 +202,9 @@ Các sơ đồ lớp dưới đây được xây dựng trực tiếp từ cấu
           )
         ), name: <bvhnode>),
 
-        edge(<gui>, <raytracer>, marks: composition),
+        edge(<gui>, <raytracer>, marks: composition, bend: 60deg),
         edge(<gui>, <camera>, marks: aggregation),
-        edge(<gui>, <scene>, marks: aggregation, bend: -12deg),
+        edge(<gui>, <scene>, marks: aggregation, bend: -10deg),
         edge(<raytracer>, <camera>, marks: dependency, bend: 10deg),
         edge(<raytracer>, <scene>, marks: dependency),
 
@@ -219,6 +219,8 @@ Các sơ đồ lớp dưới đây được xây dựng trực tiếp từ cấu
 
 `Gui` sở hữu một `RayTracer`, nó chạy vòng lặp kết xuất và vòng lặp giao diện trên hai luồng riêng biệt. Vì cả 2 luồng đều có thể truy cập đến dữ liệu cảnh như `scene`, `tracer` và `camera`, `Gui` còn sở hữu `scene_mutex` để khóa cảnh, ngăn việc 2 luồng này cùng truy cập và thay đổi dữ liệu cùng một lúc. Luồng kết xuất chỉ hoạt động khi nó giữ `scene_mutex`, trong khi luồng giao diện luôn hoạt động trong suốt vòng đời chương trình. Mọi thay đổi từ giao diện được đưa vào `pending_actions` và chỉ áp dụng khi luồng giao diện lấy được `scene_mutex`; sau khi áp dụng hết các sửa đổi trong `pending_actions` thì nó ngay lập tức thả `scene_mutex` để luồng kết xuất hoạt động trở lại. Luồng giao diện có thể yêu cầu luồng kết xuất thả `scene_mutex` bằng cờ `lock_requested`. Sau mỗi lượt, luồng kết xuất sao chép ảnh từ `tracer` sang `front_pixels` rồi bật cờ `is_data_ready`; luồng giao diện chỉ đọc bộ đệm này khi cờ đã bật, sau đó mới tải lên `sf::Texture`. Thiết kế này giúp luồng giao diện luôn luôn hoạt động mà không bị dừng lại, làm cho trải nghiệm người dùng mượt mà.
 
+`BVHNode` cài đặt cấu trúc cây phân vùng không gian để tăng tốc tốc độ duyệt giao cắt giữa tia và các vật thể (sẽ được nói rõ hơn ở phần sau).
+
 #figure(
   block(breakable: false, width: 100%)[
     #align(center)[
@@ -226,7 +228,59 @@ Các sơ đồ lớp dưới đây được xây dựng trực tiếp từ cấu
         node-shape: rect,
         spacing: (0.2cm, 0.2cm),
 
-        node((0, 0), class(
+        node((0, 0.5), class(
+          "NamedElement",
+          (
+            "# name: string",
+          ),
+          (
+            "+ getName(): string",
+          )
+        ), name: <namedelement>),
+
+        node((4, 0), class(
+          "Hittable",
+          ("...",),
+          ("...",)
+        ), name: <hittable>),
+
+        node((4, 1), class(
+          "Material",
+          ("...",),
+          ("...",)
+        ), name: <material>),
+
+        node((-4, 0), class(
+          "Texture",
+          ("...",),
+          ("...",)
+        ), name: <texture>),
+
+        node((-4, 1), class(
+          "Medium",
+          ("...",),
+          ("...",)
+        ), name: <medium>),
+
+        edge(<hittable>, <namedelement>, marks: inheritance),
+        edge(<material>, <namedelement>, marks: inheritance),
+        edge(<texture>, <namedelement>, marks: inheritance),
+        edge(<medium>, <namedelement>, marks: inheritance),
+      )
+    ]
+  ], caption: [Các đối tượng được đặt tên.]
+)
+
+Các lớp `Hittable`, `Material`, `Texture` và `Medium` cùng kế thừa `NamedElement` để dễ dàng quản lý trong giao diện người dùng.
+
+#figure(
+  block(breakable: false, width: 100%)[
+    #align(center)[
+      #diagram(
+        node-shape: rect,
+        spacing: (0.2cm, 0.2cm),
+
+        node((0.2, 0), class(
           "Transform",
           (
             "# scale: Vec3",
@@ -251,15 +305,13 @@ Các sơ đồ lớp dưới đây được xây dựng trực tiếp từ cấu
           (
             "# transform: Transform",
             "# material: Material*",
-            "# name: string",
           ),
           (
             "+ hit(ray: const Ray&): HitInfo = 0",
             "+ getAABB(): AABB",
-            "- getLocalAABB(): AABB = 0",
             "+ getTransform(): Transform&",
             "+ getMaterial(): Material*",
-            "+ getName(): string&",
+            "- getLocalAABB(): AABB = 0",
           )
         ), name: <hittable>),
 
@@ -292,7 +344,7 @@ Các sơ đồ lớp dưới đây được xây dựng trực tiếp từ cấu
           )
         ), name: <mesh>),
 
-        node((-1, 3.5), class(
+        node((1.9, 2), class(
           "RawTriangle",
           (
             "# v0, v1, v2: Vec3",
@@ -304,25 +356,22 @@ Các sơ đồ lớp dưới đây được xây dựng trực tiếp từ cấu
           )
         ), name: <rawtriangle>),
 
-        node((1, 3.5), class(
+        node((1.5, 0), class(
           "BVHNode",
           (
-            "# aabb: AABB",
-            "# left, right: unique_ptr<BVHNode>",
-            "# start_index, num_objects: int",
+            "...",
           ),
           (
-            "+ BVHNode(objects, start, end)",
-            "+ isLeaf(): bool",
-            "+ traverse(ray, hitFunc): HitInfo",
+            "...",
           )
-        ), name: <bvhnode2>),
+        ), name: <bvhnode>),
 
         edge(<hittable>, <transform>, marks: composition),
         edge(<sphere>, <hittable>, marks: inheritance),
         edge(<mesh>, <hittable>, marks: inheritance),
         edge(<mesh>, <rawtriangle>, marks: composition),
-        edge(<mesh>, <bvhnode2>, marks: composition, bend: 12deg),
+        edge(<mesh>, <bvhnode>, marks: composition, bend: -15deg),
+        edge(<bvhnode>, <bvhnode>, marks: composition, bend: -120deg, loop-angle: -150deg),
       )
     ]
   ], caption: [Hệ thống hình học.]
@@ -341,7 +390,7 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
         node-shape: rect,
         spacing: (0.2cm, 0.2cm),
 
-        node((-1, 0), class(
+        node((-3, 0), class(
           "Matte",
           none,
           (
@@ -350,7 +399,7 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
           )
         ), name: <matte>),
 
-        node((0, 0), class(
+        node((-3, 1), class(
           "Metal",
           (
             "# roughness: float",
@@ -362,7 +411,7 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
           )
         ), name: <metal>),
 
-        node((1, 0), class(
+        node((3, 0), class(
           "Dielectric",
           none,
           (
@@ -371,7 +420,7 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
           )
         ), name: <dielectric>),
 
-        node((1.5, 1.4), class(
+        node((3, 1), class(
           "Light",
           (
             "# emission_strength: float",
@@ -385,10 +434,9 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
           )
         ), name: <light>),
 
-        node((0, 2.5), class(
+        node((0, 0.5), class(
           "Material",
           (
-            "# name: string",
             "# texture: Texture*",
             "# medium: Medium*",
           ),
@@ -396,13 +444,12 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
             "+ Material(name, texture, medium)",
             "+ scatter(...): ScatterResult",
             "+ emitted(rec): Color",
-            "+ getName(): string&",
             "+ getTexture(): Texture*",
             "+ getMedium(): Medium*",
           )
         ), name: <material>),
 
-        node((-1, 3.9), class(
+        node((0, 2), class(
           "ScatterResult «enum»",
           (
             "Terminated",
@@ -434,18 +481,15 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
         node((-2, 0), class(
           "Texture «abstract»",
           (
-            "# name: string",
           ),
           (
             "+ get(rec): Color = 0",
-            "+ getName(): string&",
           )
         ), name: <texture>),
 
         node((0, 0), class(
           "Material",
           (
-            "# name: string",
             "# texture: Texture*",
             "# medium: Medium*",
           ),
@@ -453,7 +497,6 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
             "+ Material(name, texture, medium)",
             "+ scatter(...): ScatterResult",
             "+ emitted(rec): Color",
-            "+ getName(): string&",
             "+ getTexture(): Texture*",
             "+ getMedium(): Medium*",
           )
@@ -462,13 +505,11 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
         node((1, 0), class(
           "Medium",
           (
-            "# name: string",
             "# ior: float",
           ),
           (
             "+ Medium(name, ior)",
             "+ {virtual} transmit(distance): Color",
-            "+ getName(): string&",
             "+ getIOR(): float&",
           )
         ), name: <medium>),
@@ -522,11 +563,7 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
   ], caption: [Vật liệu, bề mặt và môi trường truyền dẫn.]
 )
 
-`Texture` cung cấp dữ liệu bề mặt tại một `HitInfo` bao gồm suy hao bề mặt (màu sắc), độ nhám, pháp tuyến, ...; `ColorTexture` là cài đặt đơn giản nhất, luôn trả về một màu không đổi. `Medium` mô tả môi trường mà tia đang truyền qua. `Medium::transmit(distance)` trả về hệ số suy hao năng lượng trên một đoạn đường dài `distance`; lớp cơ sở trả về màu trắng (không hấp thụ), còn `Homogeneous` cài đặt định luật Beer–Lambert:
-
-$ "transmit"(d) = exp(-sigma dot "density" dot d) $
-
-với phép nhân và hàm mũ được áp dụng cho từng kênh màu. Môi trường toàn cục của cảnh được lưu trong `Scene.global_medium`; mỗi vật liệu `Dielectric` tham chiếu thêm một `Medium` riêng để mô tả môi trường bên trong nó.
+`Texture` cung cấp dữ liệu bề mặt tại một `HitInfo` bao gồm suy hao bề mặt (màu sắc), độ nhám, pháp tuyến, ...; `ColorTexture` là cài đặt đơn giản nhất, luôn trả về một màu không đổi. `Medium` mô tả môi trường mà tia đang truyền qua. `Medium::transmit(distance)` trả về hệ số suy hao năng lượng trên một đoạn đường dài `distance`; lớp cơ sở trả về màu trắng (không hấp thụ), còn `Homogeneous` cài đặt định luật Beer–Lambert trong môi trường đồng nhất. Mỗi vật liệu `Dielectric` tham chiếu thêm một `Medium` riêng để mô tả môi trường bên trong nó.
 
 #figure(
   block(breakable: false, width: 100%)[
@@ -638,14 +675,7 @@ với phép nhân và hàm mũ được áp dụng cho từng kênh màu. Môi t
             "# translation: Vec3",
           ),
           (
-            "+ pointApply(v): Vec3",
-            "+ pointApplyInverse(v): Vec3",
-            "+ dirApply(v): Vec3",
-            "+ dirApplyInverse(v): Vec3",
-            "+ normalApply(v): Vec3",
-            "+ rotate(angles: Vec3): Transform&",
-            "+ move(pos: Vec3): Transform&",
-            "+ size(s: Vec3): Transform&",
+            "...",
           )
         ), name: <transform>),
 
@@ -685,7 +715,7 @@ với phép nhân và hàm mũ được áp dụng cho từng kênh màu. Môi t
         ), name: <rng>),
 
         edge(<vec2>, <vec3>, marks: dependency),
-        edge(<color>, <vec3>, marks: dependency, label: [alias], bend: -10deg),
+        edge(<color>, <vec3>, marks: dependency, label: [alias]),
         edge(<ray>, <vec3>, marks: composition),
         edge(<aabb>, <vec3>, marks: composition),
         edge(<rawtriangle>, <vec3>, marks: composition),
@@ -697,14 +727,13 @@ với phép nhân và hàm mũ được áp dụng cho từng kênh màu. Môi t
 
 Các kiểu toán học được thiết kế dưới dạng `struct` nhỏ, thao tác trên giá trị và không sở hữu tài nguyên. `Vec3` kiêm luôn vai trò `Color` (với các kênh R, G, B lần lược là các trục x, y, z) và cung cấp các phép toán vector, phản xạ, khúc xạ, chuyển đổi màu sang ABGR. `Ray` và `AABB` là hai kiểu nền tảng cho mọi phép truy vấn giao cắt; `RawTriangle` kết hợp `Vec3` và `Vec2` để lưu hình học và tọa độ kết cấu. `Transform` đóng gói phép biến đổi affine, `Mat3x3` dùng để chứa ma trận xoay, còn `RNG` là lớp tiện ích tĩnh phục vụ lấy mẫu ngẫu nhiên trong mô phỏng Monte Carlo.
 
-#pagebreak()
-
 == Cây phân vùng không gian Bounding Volume Hierarchy (BVH)
 Thay vì duyệt tuyến tính qua toàn bộ danh sách vật thể để tìm giao điểm, chương trình sử dụng cấu trúc cây BVH để truy vấn giao cắt giữa tia và các vật thể trong cảnh. Cấu trúc của một nút trên cây gồm con trỏ đến 2 nút con (trỏ đến vô định nếu là nút lá), phạm vi vật thể mà nó quản lý và hộp bao AABB của những vật thể đó. Hai nút con của một nút cha sẽ quản lý 2 tập con bù nhau của tập vật thể mà nút cha quản lý.
 
 Khi kiểm tra giao cắt, ta kiểm tra xem tia có cắt với hộp bao của nút BVH không. Nếu có, ta phải lặp lại phép kiểm tra tương tự trên cả 2 nút con của nút còn lại (nếu là nút lá thì tiến hành kiểm tra giao cắt giữa tia - vật thể); nếu không, ta có thể hoàn toàn bỏ qua việc kiểm tra các nút con của nút hiện tại, do đó giảm đáng kể thời gian truy vấn.
 
 Sử dụng cây BVH, ta có thể giảm độ phức tạp thời gian truy vấn từ $O(N)$ đối với tìm kiếm tuần tự xuống trung bình $O(log N)$, với $N$ là số lượng vật thể trong cảnh.
+
 = Thuật toán
 Trong các thuật toán, $epsilon$ là mức sai số chấp nhận được dùng trong các phép so sánh số thực.
 
@@ -909,7 +938,7 @@ Trong lớp `Mesh`, thuật toán này được gọi cho từng tam giác nằm
 
 Để tạo cây BVH của toàn bộ vật thể trong danh sách `objects`, chỉ cần gọi `BVHNode(objects, 0, objects.size())`.
 
-== Thuật toán truy vấn giao cắt trên cây BVH
+== Thuật toán truy vấn giao cắt trên BVH
 === Đầu vào
 - Nút gốc `bvh_root` của cây BVH.
 - Tia sáng `ray`.
@@ -942,7 +971,7 @@ Nhờ `t_max` được thu hẹp sau mỗi va chạm, các nút có AABB nằm x
 - Chiết xuất của môi trường tia hướng đến $n_2$
 
 === Đầu ra
-- Hướng tia mới $arrow(d_"new")$
+- Hướng tia mới $arrow(d)_"new"$
 - Kết quả: bị tán xạ `Scattered` hoặc bị khúc xạ `Refracted`.
 
 === Phương pháp
@@ -963,7 +992,7 @@ $ arrow(d)_"new" = eta arrow(d) + (eta cos theta - sqrt(1 - eta^2 (1 - cos^2 the
 - Độ nhám vật liệu $r$ có giá trị từ $0$ đến $1$.
 
 === Đầu ra
-- Hướng tia mới $arrow(d_"new")$.
+- Hướng tia mới $arrow(d)_"new"$.
 - Kết quả: luôn bị tán xạ `Scattered`.
 
 === Phương pháp
@@ -1011,21 +1040,21 @@ trong đó $arrow(v)_"rand"$ là một vector đơn vị ngẫu nhiên.
 - `Scene` chứa cây BVH, vật thể, vật liệu và môi trường toàn cục.
 - Kích thước ảnh `W × H`, tương ứng với `viewport_width` và `viewport_height`.
 - Số mẫu mỗi pixel `samples_per_pixel` (gọi tắt là `spp`) và số lần dội tối đa `max_bounces`.
-- Bộ đệm tích lũy `buffer` và số pass đã kết xuất `pass`.
+- Bộ đệm tích lũy `buffer` và số lượt đã kết xuất `pass`.
 
 === Đầu ra
-- Ảnh `pixels` ở dạng ABGR 8-bit, mỗi kênh đã được tone map và hiệu chỉnh gamma.
-- `buffer` được cộng dồn để các pass sau tiếp tục hội tụ; `pass` tăng thêm 1 sau mỗi lần kết xuất.
+- Ảnh `pixels` ở định dạng ABGR 32-bit, mỗi kênh đã được tone map và hiệu chỉnh gamma.
+- `buffer` được cộng dồn để các lượt sau tiếp tục hội tụ; `pass` tăng thêm 1 sau mỗi lần kết xuất.
 
 === Phương pháp
-Mỗi pixel nhận ánh sáng từ một tập tia liên tục trên diện tích pixel và trên mặt phẳng khẩu độ. Gọi $I_(i j)$ là màu lý tưởng của pixel ở cột $i$, hàng $j$. Giá trị này là một tích phân trên miền mẫu, nhưng chương trình ước lượng bằng Monte Carlo: lấy $N$ mẫu (với $N$ được định nghĩa ở mục lấy mẫu pixel), tạo một tia cho mỗi mẫu, dò màu rồi lấy trung bình:
+Mỗi pixel nhận ánh sáng từ một tập tia liên tục trên diện tích pixel và trên mặt phẳng khẩu độ. Gọi $I_(i j)$ là màu lý tưởng của pixel ở cột $i$, hàng $j$. Giá trị này là một tích phân trên miền mẫu, nhưng chương trình ước lượng bằng Monte Carlo: lấy $N$ mẫu ngẫu nhiên, tạo một tia cho mỗi mẫu, dò màu rồi lấy trung bình:
 
 $ I_(i j) approx 1/N sum_(k=1)^N L(arrow(r)_k) $
 
 trong đó $L(arrow(r)_k)$ là màu trả về bởi `trace()` cho tia thứ $k$. Vì bản thân `trace()` cũng dùng mẫu ngẫu nhiên cho tán xạ, khúc xạ và Russian roulette, toàn bộ ảnh là một ước lượng Monte Carlo nhiều tầng: lấy mẫu pixel, lấy mẫu khẩu độ và lấy mẫu đường đi ánh sáng. Khi $N$ tăng, phương sai giảm theo $O(1/N)$, nên ảnh hội tụ dần.
 
 ==== Lấy mẫu pixel và khử răng cưa
-- Xét pixel ở cột `i`, hàng `j`. Chia pixel thành lưới $n times n$, với $n = max(1, floor(sqrt("spp")))$. Số mẫu thực tế mỗi pixel mỗi pass là $N = n^2$; nếu `spp` không phải số chính phương thì $N$ nhỏ hơn giá trị đã đặt.
+- Xét pixel ở cột `i`, hàng `j`. Chia pixel thành lưới $n times n$, với $n = max(1, floor(sqrt("spp")))$. Số mẫu thực tế mỗi pixel mỗi lượt là $N = n^2$; nếu `spp` không phải số chính phương thì $N$ nhỏ hơn giá trị đã đặt.
 - Với mỗi ô $(s_x, s_y)$ trong lưới, lấy một điểm ngẫu nhiên bên trong ô:
 
 $ x = (i + (s_x + xi_x)/n)/W - 1/2, quad y = -((j + (s_y + xi_y)/n)/H - 1/2) $
@@ -1039,7 +1068,7 @@ trong đó $f$ là `focal_length` và $(arrow(w), arrow(u), arrow(v))$ là các 
 - Vì mỗi mẫu nằm ở một vị trí khác nhau trong pixel, biên vật thể được lấy trung bình theo độ phủ thực để khử răng cưa (anti-aliasing). Cách chia lưới rồi lấy ngẫu nhiên trong từng ô là lấy mẫu phân tầng (stratified sampling), giúp giảm phương sai so với chọn hoàn toàn ngẫu nhiên.
 
 ==== Khẩu độ và độ sâu trường ảnh
-Khi gọi `Camera::getRayAt()` với `aperture > 0` và `jitter = true`, hàm dịch gốc tia trong mặt phẳng khẩu độ sinh bởi hai vector cơ sở $arrow(u)$ và $arrow(v)$ bằng một offset ngẫu nhiên. Gọi $(Delta u, Delta v)$ = `RNG::pointInCircle(aperture/3)` và gọi $arrow(o)$ là gốc tia trước khi dịch; gốc mới $arrow(o)'$ là:
+Khi gọi `Camera::getRayAt()` với `aperture > 0` và `jitter = true`, hàm dịch gốc tia trong mặt phẳng khẩu độ sinh bởi hai vector cơ sở $arrow(u)$ và $arrow(v)$ bằng một offset ngẫu nhiên. Lấy mẫu ngẫu nhiên $(Delta u, Delta v)$ bằng `RNG::pointInCircle(aperture/2)`; gọi $arrow(o)$ là gốc tia trước khi dịch; gốc mới $arrow(o)'$ là:
 
 $ arrow(o)' = arrow(o) + Delta u arrow(u) + Delta v arrow(v) $
 
@@ -1099,6 +1128,6 @@ for (each pass) {
 }
 ```
 
-Độ phức tạp của một pass là $O(W H N C)$, với $C$ là chi phí trung bình của một lần `trace()`. Chi phí này phụ thuộc vào `max_bounces`, cấu trúc BVH và số vật thể trong cảnh.
+Độ phức tạp của một lượt kết xuất là $O(W H N C)$, với $C$ là chi phí trung bình của một lần `trace()`. Chi phí này phụ thuộc vào `max_bounces`, cấu trúc BVH và số vật thể trong cảnh.
 
-Tóm lại, `RayTracer::render()` kết hợp lấy mẫu phân tầng trên pixel, offset khẩu độ, tích lũy nhiều pass và hậu kỳ tone mapping/gamma để biến các ước lượng Monte Carlo còn nhiễu thành ảnh hiển thị ổn định. Số mẫu mỗi pixel và số pass càng lớn thì ảnh càng hội tụ, đổi lại thời gian kết xuất tăng tuyến tính.
+Tóm lại, `RayTracer::render()` kết hợp lấy mẫu phân tầng trên pixel, offset khẩu độ, tích lũy nhiều lượt và hậu kỳ tone mapping/gamma để biến các ước lượng Monte Carlo còn nhiễu thành ảnh hiển thị ổn định. Số mẫu mỗi pixel và số lượt càng lớn thì ảnh càng hội tụ, đổi lại thời gian kết xuất tăng tuyến tính.

@@ -246,7 +246,7 @@ void Gui::drawObjectPropertiesSection(Hittable* object) {
 
     if(changed) {
         postAction([this, obj = object, edited]() {
-            obj->getTransform() = edited;
+            obj->setTransform(edited);
             dirty_geometry = true;
         });
     }
@@ -326,7 +326,7 @@ void Gui::drawMediumPropertiesSection(Medium* medium) {
     float ior = medium->getIOR();
     if(ImGui::DragFloat("IOR", &ior, 0.01f, 0.01f, 10.0f)) {
         postAction([medium, ior]() {
-            medium->getIOR() = ior;
+            medium->setIOR(ior);
         });
     }
 
@@ -463,19 +463,21 @@ void Gui::drawCameraWindow() {
     ImGui::Begin("Camera");
 
     // TODO: move this to post processing window
-    ImGui::DragFloat("Exposure", &camera.getExposure(), 0.05f, 0.01f, 100.0f);
+    float exposure = camera.getExposure();
+    ImGui::DragFloat("Exposure", &exposure, 0.05f, 0.01f, 100.0f);
+    camera.setExposure(exposure);
 
     float focal_length = camera.getFocalLength();
     if(ImGui::DragFloat("Focal length", &focal_length, 0.01f, 0.01f, 100.0f)) {
         postAction([this, focal_length]() {
-            camera.getFocalLength() = focal_length;
+            camera.setFocalLength(focal_length);
         });
     }
 
     float aperture = camera.getAperture();
     if(ImGui::DragFloat("Aperture", &aperture, 0.01f, 0.00f, 1000.0f)) {
         postAction([this, aperture]() {
-            camera.getAperture() = aperture;
+            camera.setAperture(aperture);
         });
     }
 

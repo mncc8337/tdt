@@ -1,7 +1,7 @@
 #include "Material.h"
 
 Material::Material(const std::string name, Texture* texture, Medium* medium):
-    name(name),
+    NamedElement(name),
     texture(texture),
     medium(medium) {}
 
@@ -24,12 +24,4 @@ Texture* Material::getTexture() const {
 
 Medium* Material::getMedium() const {
     return medium;
-}
-
-std::string& Material::getName() {
-    return name;
-}
-
-const std::string& Material::getName() const {
-    return name;
 }

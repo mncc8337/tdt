@@ -1,7 +1,7 @@
 #include "Hittable.h"
 
 Hittable::Hittable(const std::string name, Material* material):
-    name(name),
+    NamedElement(name),
     material(material) {}
 
 Hittable::~Hittable() {}
@@ -25,7 +25,7 @@ AABB Hittable::getAABB() const {
 
     AABB transformed(corners[0]);
 
-    for (int i = 0; i < 8; i++) {
+    for(int i = 0; i < 8; i++) {
         Vec3 world_corner = transform.pointApply(corners[i]);
         transformed.extend(world_corner);
     }
@@ -33,22 +33,14 @@ AABB Hittable::getAABB() const {
     return transformed;
 }
 
-Transform& Hittable::getTransform() {
-    return transform;
-}
-
 const Transform& Hittable::getTransform() const {
     return transform;
 }
 
+void Hittable::setTransform(const Transform t) {
+    transform = t;
+}
+
 Material* Hittable::getMaterial() const {
     return material;
-}
-
-std::string& Hittable::getName() {
-    return name;
-}
-
-const std::string& Hittable::getName() const {
-    return name;
 }
