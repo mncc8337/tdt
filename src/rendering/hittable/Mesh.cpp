@@ -6,7 +6,7 @@
 Mesh::Mesh(const std::string name, Material* material, const std::vector<RawTriangle>& src_tris):
     Hittable(name, material), tris(src_tris) {
     if(tris.empty()) return;
-    computeAABB();
+    recomputeAABB();
     bvh_root = std::make_unique<BVHNode<RawTriangle>>(tris, 0, tris.size());
 }
 
@@ -14,15 +14,16 @@ Mesh::Mesh(const std::string name, Material* material, std::string filename):
     Hittable(name, material) {
     loadMeshFrom(filename, tris);
     if(tris.empty()) return;
-    computeAABB();
+    recomputeAABB();
     bvh_root = std::make_unique<BVHNode<RawTriangle>>(tris, 0, tris.size());
 }
 
-void Mesh::computeAABB() {
-    aabb = getNodeAABB(tris[0]);
+AABB Mesh::calculateLocalAABB() const {
+    AABB box = getNodeAABB(tris[0]);
     for(size_t i = 1; i < tris.size(); i++) {
-        aabb.extend(getNodeAABB(tris[i]));
+        box.extend(getNodeAABB(tris[i]));
     }
+    return box;
 }
 
 HitInfo Mesh::hit(const Ray& ray) const {
@@ -82,8 +83,4 @@ HitInfo Mesh::hit(const Ray& ray) const {
         closest_hit.normal = transform.normalApply(closest_hit.normal);
     }
     return closest_hit;
-}
-
-AABB Mesh::getLocalAABB() const {
-    return aabb;
 }

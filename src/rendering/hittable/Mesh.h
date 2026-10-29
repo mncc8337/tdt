@@ -8,10 +8,8 @@ class Mesh: public Hittable {
 private:
     std::vector<RawTriangle> tris;
     std::unique_ptr<BVHNode<RawTriangle>> bvh_root;
-    AABB aabb;
 
-    AABB getLocalAABB() const override;
-    void computeAABB();
+    AABB calculateLocalAABB() const override;
 
 public:
     Mesh(const std::string name, Material* material, const std::vector<RawTriangle>& tris);

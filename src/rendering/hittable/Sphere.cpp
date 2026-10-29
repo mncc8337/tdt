@@ -8,7 +8,9 @@ Sphere::Sphere(
     float radius
 ):
     Hittable(name, material),
-    radius(radius) {}
+    radius(radius) {
+    recomputeAABB();
+}
 
 HitInfo Sphere::hit(const Ray& ray) const {
     HitInfo info;
@@ -25,7 +27,7 @@ HitInfo Sphere::hit(const Ray& ray) const {
 
     float discriminant = half_b * half_b - a * c;
 
-    if (discriminant < 0) {
+    if(discriminant < 0) {
         return info;
     }
 
@@ -64,10 +66,15 @@ HitInfo Sphere::hit(const Ray& ray) const {
     return info;
 }
 
-AABB Sphere::getLocalAABB() const {
+AABB Sphere::calculateLocalAABB() const {
     return AABB({/* center + */ Vec3(radius), /* center */ - Vec3(radius)});
 }
 
-float& Sphere::getRadius() {
+const float& Sphere::getRadius() const {
     return radius;
+}
+
+void Sphere::setRadius(const float r) {
+    radius = r;
+    recomputeAABB();
 }
