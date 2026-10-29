@@ -34,7 +34,7 @@ HitInfo Mesh::hit(const Ray& ray) const {
     auto hitFunc = [&](const int primitive_idx, HitInfo& current_closest) {
         const auto& tri = tris[primitive_idx];
 
-        float tri_t_max = DID_HIT(current_closest) ? current_closest.distance : FAR_DISTANCE;
+        float tri_t_max = current_closest.didHit() ? current_closest.distance : FAR_DISTANCE;
 
         Vec3 edge1 = tri.v1 - tri.v0;
         Vec3 edge2 = tri.v2 - tri.v0;
@@ -71,7 +71,7 @@ HitInfo Mesh::hit(const Ray& ray) const {
 
     HitInfo closest_hit = bvh_root->traverse(local_ray, hitFunc);
 
-    if(DID_HIT(closest_hit)) {
+    if(closest_hit.didHit()) {
         closest_hit.material = material;
         // convert to world space coordinates
         closest_hit.hit_point = transform.pointApply(closest_hit.hit_point);

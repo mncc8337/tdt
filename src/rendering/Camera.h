@@ -23,17 +23,14 @@ public:
         Vec3 lookat
     );
 
-    float& getFocalLength();
     const float& getFocalLength() const;
+    void setFocalLength(const float f);
 
-    float& getExposure();
     const float& getExposure() const;
+    void setExposure(const float r);
 
-    float& getAperture();
     const float& getAperture() const;
-
-    float& getDivergeStrength();
-    const float& getDivergeStrength() const;
+    void setAperture(const float a);
 
     const Vec3& getPosition() const;
     void setPosition(const Vec3 new_pos);

@@ -18,7 +18,7 @@ HitInfo BVHNode::traverse(
         const BVHNode* current_node = node_queue.front();
         node_queue.pop();
 
-        float t_max = DID_HIT(closest_hit) ? closest_hit.distance : FAR_DISTANCE;
+        float t_max = closest_hit.didHit() ? closest_hit.distance : FAR_DISTANCE;
         if(current_node->aabb.hit(ray, EPSILON, t_max)) {
             if(!current_node->isLeaf()) {
                 node_queue.push(current_node->left.get());

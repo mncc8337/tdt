@@ -36,29 +36,28 @@ Ray Camera::getRayAt(Vec2 uv, bool jitter) const {
     return ray;
 }
 
-float& Camera::getFocalLength() {
-    return focal_length;
-}
-
 const float& Camera::getFocalLength() const {
     return focal_length;
 }
 
-float& Camera::getExposure() {
-    return exposure;
+void Camera::setFocalLength(const float f) {
+    focal_length = f;
 }
 
 const float& Camera::getExposure() const {
     return exposure;
 }
 
-
-float& Camera::getAperture() {
-    return aperture;
+void Camera::setExposure(const float e) {
+    exposure = e;
 }
 
 const float& Camera::getAperture() const {
     return aperture;
+}
+
+void Camera::setAperture(const float a) {
+    aperture = a;
 }
 
 const Vec3& Camera::getPosition() const {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math/Ray.h"
+#include "misc/NamedElement.h"
 #include "Texture.h"
 #include "Medium.h"
 #include "HitInfo.h"
@@ -11,9 +12,8 @@ enum class ScatterResult {
     Refracted   // ray crossed the surface boundary (enter if front_face, else exit)
 };
 
-class Material {
+class Material: public NamedElement {
 protected:
-    std::string name;
     Texture* texture;
     Medium* medium;
 
@@ -28,9 +28,6 @@ public:
     ) const;
 
     virtual Color emitted(const HitInfo& rec) const;
-
-    std::string& getName();
-    const std::string& getName() const;
 
     Texture* getTexture() const;
     Medium* getMedium() const;

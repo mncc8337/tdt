@@ -3,7 +3,6 @@
 #include <vector>
 #include <memory>
 
-#include "Hittable.h"
 #include "Texture.h"
 #include "Medium.h"
 #include "accel/BVHNode.h"
@@ -15,9 +14,9 @@ private:
     std::vector<std::unique_ptr<Texture>> textures;
     std::vector<std::unique_ptr<Medium>> mediums;
 
-    Medium* global_medium;
+    Medium* global_medium = nullptr;
 
-    std::unique_ptr<BVHNode> bvh_root;
+    std::unique_ptr<BVHNode> bvh_root = nullptr;
 
 public:
     Hittable& addObject(std::unique_ptr<Hittable> object);
@@ -37,8 +36,8 @@ public:
 
     HitInfo getClosest(const Ray& ray, Hittable*& obj) const;
 
+    void buildBVH();
+
     // void save_scene(std::string path);
     // void load_scene(std::string path);
-
-    void buildBVH();
 };

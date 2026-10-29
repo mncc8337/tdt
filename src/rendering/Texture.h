@@ -1,17 +1,11 @@
 #pragma once
 
 #include "HitInfo.h"
-#include <string>
+#include "misc/NamedElement.h"
 
-class Texture {
-protected:
-    std::string name;
-
+class Texture: public NamedElement {
 public:
     Texture(const std::string name);
 
     virtual Color get(const HitInfo& rec) const = 0;
-
-    std::string& getName();
-    const std::string& getName() const;
 };

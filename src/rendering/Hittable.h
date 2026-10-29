@@ -4,13 +4,12 @@
 #include "HitInfo.h"
 #include "math/AABB.h"
 #include "math/Transform.h"
-#include <string>
+#include "misc/NamedElement.h"
 
-class Hittable{
+class Hittable: public NamedElement {
 protected:
     Transform transform;
     Material* material;
-    std::string name;
 
     virtual AABB getLocalAABB() const = 0;
 
@@ -20,12 +19,9 @@ public:
     virtual HitInfo hit(const Ray& ray) const = 0;
     virtual AABB getAABB() const;
 
-
-    Transform& getTransform();
     const Transform& getTransform() const;
+    // FIXME: this func allows user to set the object transform without the scene knowing
+    void setTransform(const Transform t);
 
     Material* getMaterial() const;
-
-    std::string& getName();
-    const std::string& getName() const;
 };

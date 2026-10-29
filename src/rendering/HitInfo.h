@@ -3,8 +3,6 @@
 #include "math/Vec3.h"
 #include "math/Vec2.h"
 
-#define DID_HIT(rec) ((rec).distance > 0.0)
-
 class Material;
 
 struct HitInfo {
@@ -14,4 +12,6 @@ struct HitInfo {
     const Material* material = nullptr;
     bool front_face;
     Vec2 uv;
+
+    bool didHit() const;
 };

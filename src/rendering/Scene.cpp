@@ -55,8 +55,8 @@ HitInfo Scene::getClosest(const Ray& ray, Hittable*& obj) const {
         const auto& hittable_obj = objects[primitive_idx];
         HitInfo temp_hit = hittable_obj->hit(ray);
 
-        if(DID_HIT(temp_hit)) {
-            if(!DID_HIT(current_closest) or temp_hit.distance < current_closest.distance) {
+        if(temp_hit.didHit()) {
+            if(!current_closest.didHit() or temp_hit.distance < current_closest.distance) {
                 current_closest = temp_hit;
                 obj = hittable_obj.get();
             }
@@ -73,5 +73,6 @@ void Scene::buildBVH() {
         bvh_root.reset();
         return;
     }
+
     bvh_root = std::make_unique<BVHNode>(objects, 0, objects.size());
 }

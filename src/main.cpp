@@ -67,7 +67,9 @@ int main() {
         const Vec3& scale = Vec3(1)
     ) {
         Mesh& plane = addMesh(name, material, plane_model);
-        plane.getTransform().size(scale).rotate(rotation).move(position);
+        Transform plane_t = plane.getTransform();
+        plane_t.size(scale).rotate(rotation).move(position);
+        plane.setTransform(plane_t);
     };
 
     addPlane("floor", white_matte, Vec3(0, 0, 0));
@@ -85,16 +87,18 @@ int main() {
     );
 
     Mesh& tall_box = addMesh("tall box", white_matte, cube_model);
-    tall_box.getTransform()
-        .size(Vec3(0.25f, 0.6f, 0.25f))
+    Transform tall_box_t = tall_box.getTransform();
+    tall_box_t.size(Vec3(0.25f, 0.6f, 0.25f))
         .rotate(Vec3(0, 0.30f, 0))
         .move(Vec3(0.42f, 0.6f, -0.35f));
+    tall_box.setTransform(tall_box_t);
 
     Mesh& short_box = addMesh("short box", white_matte, cube_model);
-    short_box.getTransform()
-        .size(Vec3(0.3f))
+    Transform short_box_t = short_box.getTransform();
+    short_box_t.size(Vec3(0.3f))
         .rotate(Vec3(0, -0.40f, 0))
         .move(Vec3(-0.45f, 0.3f, 0.15f));
+    short_box.setTransform(short_box_t);
 
     scene.buildBVH();
 
