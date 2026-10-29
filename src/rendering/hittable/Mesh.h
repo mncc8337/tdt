@@ -2,12 +2,12 @@
 
 #include "Hittable.h"
 #include "math/RawTriangle.h"
-#include "accel/BVHNode.h"
+#include "dsa/BVHNode.h"
 
 class Mesh: public Hittable {
 private:
     std::vector<RawTriangle> tris;
-    std::unique_ptr<BVHNode> bvh_root;
+    std::unique_ptr<BVHNode<RawTriangle>> bvh_root;
     AABB aabb;
 
     AABB getLocalAABB() const override;
