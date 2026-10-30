@@ -71,7 +71,7 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
     Color throughput(1);
 
     std::stack<const Medium*> medium_stack;
-    medium_stack.push(scene.getGlobalMedium());
+    medium_stack.push(&scene.getGlobalMedium());
 
     for(unsigned bounces = 0; bounces < max_bounces; bounces++) {
         Hittable* obj;

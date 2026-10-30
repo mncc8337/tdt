@@ -7,7 +7,6 @@
 #include "rendering/material/Light.h"
 #include "rendering/hittable/Mesh.h"
 
-#include <memory>
 #include <string>
 #include <numbers>
 
@@ -20,33 +19,43 @@ int main() {
 
     Scene scene;
 
-    Medium& vacuum = scene.addMedium(std::make_unique<Medium>("vacuum"));
-    scene.getGlobalMedium() = &vacuum;
+    Medium& vacuum = scene.addMedium<Medium>("vacuum");
+    scene.setGlobalMedium(vacuum);
 
-    Texture& white_tex = scene.addTexture(
-        std::make_unique<ColorTexture>("white tex", Color(0.73f))
+    Texture& white_tex = scene.addTexture<ColorTexture>(
+        "white tex",
+        Color(0.73f)
     );
-    Texture& red_tex = scene.addTexture(
-        std::make_unique<ColorTexture>("red tex", Color(0.63f, 0.065f, 0.05f))
+    Texture& red_tex = scene.addTexture<ColorTexture>(
+        "red tex",
+        Color(0.63f, 0.065f, 0.05f)
     );
-    Texture& green_tex = scene.addTexture(
-        std::make_unique<ColorTexture>("green tex", Color(0.14f, 0.45f, 0.091f))
+    Texture& green_tex = scene.addTexture<ColorTexture>(
+        "green tex",
+        Color(0.14f, 0.45f, 0.091f)
     );
-    Texture& light_tex = scene.addTexture(
-        std::make_unique<ColorTexture>("light tex", Color(1))
+    Texture& light_tex = scene.addTexture<ColorTexture>(
+        "light tex",
+        Color(1)
     );
 
-    Material& white_matte = scene.addMaterial(
-        std::make_unique<Matte>("white matte", &white_tex)
+    Material& white_matte = scene.addMaterial<Matte>(
+        "white matte",
+        &white_tex
     );
-    Material& red_matte = scene.addMaterial(
-        std::make_unique<Matte>("red matte", &red_tex)
+    Material& red_matte = scene.addMaterial<Matte>(
+        "red matte",
+        &red_tex
     );
-    Material& green_matte = scene.addMaterial(
-        std::make_unique<Matte>("green matte", &green_tex)
+    Material& green_matte = scene.addMaterial<Matte>(
+        "green matte",
+        &green_tex
     );
-    Material& light_mat = scene.addMaterial(
-        std::make_unique<Light>("area light", &light_tex, 15.0f, Color(1))
+    Material& light_mat = scene.addMaterial<Light>(
+        "area light",
+        &light_tex,
+        15.0f,
+        Color(1)
     );
 
     auto addMesh = [&scene](
@@ -54,9 +63,7 @@ int main() {
         Material& material,
         const std::string& model
     ) -> Mesh& {
-        return static_cast<Mesh&>(scene.addObject(
-            std::make_unique<Mesh>(name, &material, model)
-        ));
+        return static_cast<Mesh&>(scene.addObject<Mesh>(name, &material, model));
     };
 
     auto addPlane = [&](

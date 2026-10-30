@@ -52,3 +52,7 @@ void Hittable::setTransform(const Transform t) {
 Material* Hittable::getMaterial() const {
     return material;
 }
+
+AABB getNodeAABB(const std::unique_ptr<Hittable>& obj) {
+    return obj->getAABB();
+}

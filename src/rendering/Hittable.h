@@ -5,6 +5,7 @@
 #include "math/AABB.h"
 #include "math/Transform.h"
 #include "misc/NamedElement.h"
+#include <memory>
 
 class Hittable: public NamedElement {
 protected:
@@ -29,3 +30,6 @@ public:
 
     Material* getMaterial() const;
 };
+
+// for the BVHNode template
+AABB getNodeAABB(const std::unique_ptr<Hittable>& obj);
