@@ -1,4 +1,5 @@
 #include "RawTriangle.h"
+#include "misc/floatcmp.h"
 
 RawTriangle::RawTriangle(
     const Vec3& v0,
@@ -26,3 +27,10 @@ RawTriangle::RawTriangle(
     uv0(uv0),
     uv1(uv1),
     uv2(uv2) {}
+
+AABB getNodeAABB(const RawTriangle& tri) {
+    AABB ret = AABB({tri.v0, tri.v1, tri.v2});
+    ret.minp -= Vec3(EPSILON);
+    ret.maxp += Vec3(EPSILON);
+    return ret;
+}

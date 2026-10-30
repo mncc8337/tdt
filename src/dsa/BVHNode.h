@@ -1,18 +1,13 @@
 #pragma once
 
+#include "math/AABB.h"
+#include "rendering/HitInfo.h"
 #include <memory>
 #include <vector>
 #include <functional>
-#include "Hittable.h"
-#include "math/AABB.h"
-#include "math/RawTriangle.h"
 
 #define PRIM_PER_LEAF 4
 
-AABB getNodeAABB(const std::unique_ptr<Hittable>& obj);
-AABB getNodeAABB(const RawTriangle& tri);
-
-template <typename ObjectType>
 struct BVHNode {
     AABB aabb;
     std::unique_ptr<BVHNode> left = nullptr;
@@ -22,6 +17,7 @@ struct BVHNode {
 
     bool isLeaf() const;
 
+    template <typename ObjectType>
     BVHNode(std::vector<ObjectType>& src_objects, size_t start, size_t end);
 
     HitInfo traverse(
@@ -29,3 +25,5 @@ struct BVHNode {
         std::function<void(const int, HitInfo&)> hitFunc
     ) const;
 };
+
+#include "BVHNode.inl"

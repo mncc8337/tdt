@@ -3,6 +3,8 @@
 #include <vector>
 #include <memory>
 
+#include "Hittable.h"
+#include "Material.h"
 #include "Texture.h"
 #include "Medium.h"
 #include "dsa/BVHNode.h"
@@ -16,18 +18,24 @@ private:
 
     Medium* global_medium = nullptr;
 
-    std::unique_ptr<BVHNode<std::unique_ptr<Hittable>>> bvh_root = nullptr;
+    std::unique_ptr<BVHNode> bvh_root = nullptr;
 
 public:
-    Hittable& addObject(std::unique_ptr<Hittable> object);
+    template <typename T, typename... Args>
+    Hittable& addObject(Args&&... args);
     // void remove_object(Hittable* object);
 
-    Material& addMaterial(std::unique_ptr<Material> material);
-    Texture& addTexture(std::unique_ptr<Texture> texture);
-    Medium& addMedium(std::unique_ptr<Medium> medium);
+    template <typename T, typename... Args>
+    Material& addMaterial(Args&&... args);
 
-    Medium*& getGlobalMedium();
-    const Medium*const& getGlobalMedium() const;
+    template <typename T, typename... Args>
+    Texture& addTexture(Args&&... args);
+
+    template <typename T, typename... Args>
+    Medium& addMedium(Args&&... args);
+
+    const Medium& getGlobalMedium() const;
+    void setGlobalMedium(Medium& medium);
 
     const std::vector<std::unique_ptr<Hittable>>& getObjects() const;
     const std::vector<std::unique_ptr<Material>>& getMaterials() const;
@@ -41,3 +49,5 @@ public:
     // void save_scene(std::string path);
     // void load_scene(std::string path);
 };
+
+#include "Scene.inl"

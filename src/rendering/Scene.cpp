@@ -1,34 +1,11 @@
 #include "Scene.h"
-#include "Material.h"
-#include <memory>
 
-Hittable& Scene::addObject(std::unique_ptr<Hittable> object) {
-    objects.push_back(std::move(object));
-    Hittable* obj = objects.back().get();
-    return *obj;
+const Medium& Scene::getGlobalMedium() const {
+    return *global_medium;
 }
 
-Material& Scene::addMaterial(std::unique_ptr<Material> material) {
-    materials.push_back(std::move(material));
-    return *materials.back().get();
-}
-
-Texture& Scene::addTexture(std::unique_ptr<Texture> texture) {
-    textures.push_back(std::move(texture));
-    return *textures.back().get();
-}
-
-Medium& Scene::addMedium(std::unique_ptr<Medium> medium) {
-    mediums.push_back(std::move(medium));
-    return *mediums.back().get();
-}
-
-Medium*& Scene::getGlobalMedium() {
-    return global_medium;
-}
-
-const Medium*const& Scene::getGlobalMedium() const {
-    return global_medium;
+void Scene::setGlobalMedium(Medium& medium) {
+    global_medium = &medium;
 }
 
 const std::vector<std::unique_ptr<Hittable>>& Scene::getObjects() const {
@@ -73,5 +50,5 @@ void Scene::buildBVH() {
         return;
     }
 
-    bvh_root = std::make_unique<BVHNode<std::unique_ptr<Hittable>>>(objects, 0, objects.size());
+    bvh_root = std::make_unique<BVHNode>(objects, 0, objects.size());
 }
