@@ -2,9 +2,11 @@
 #include "rendering/Camera.h"
 #include "rendering/Scene.h"
 #include "rendering/Medium.h"
+#include "rendering/medium/Homogeneous.h"
 #include "rendering/texture/ColorTexture.h"
 #include "rendering/material/Matte.h"
 #include "rendering/material/Light.h"
+#include "rendering/material/Dielectric.h"
 #include "rendering/hittable/Mesh.h"
 
 #include <string>
@@ -22,6 +24,8 @@ int main() {
     Medium& vacuum = scene.addMedium<Medium>("vacuum");
     scene.setGlobalMedium(vacuum);
 
+    Medium& glass = scene.addMedium<Homogeneous>("glass", 1.33f, 0.0f, 1.0f);
+
     Texture& white_tex = scene.addTexture<ColorTexture>(
         "white tex",
         Color(0.73f)
@@ -36,7 +40,11 @@ int main() {
     );
     Texture& light_tex = scene.addTexture<ColorTexture>(
         "light tex",
-        Color(1)
+        Color(1.0f)
+    );
+    Texture& glass_tex = scene.addTexture<ColorTexture>(
+        "glass tex",
+        Color(1.0f)
     );
 
     Material& white_matte = scene.addMaterial<Matte>(
@@ -56,6 +64,11 @@ int main() {
         &light_tex,
         15.0f,
         Color(1)
+    );
+    Material& glass_mat = scene.addMaterial<Dielectric>(
+        "glass mat",
+        &glass_tex,
+        &glass
     );
 
     auto addMesh = [&scene](
@@ -100,7 +113,7 @@ int main() {
         .move(Vec3(0.42f, 0.6f, -0.35f));
     tall_box.setTransform(tall_box_t);
 
-    Mesh& short_box = addMesh("short box", white_matte, cube_model);
+    Mesh& short_box = addMesh("short box", glass_mat, cube_model);
     Transform short_box_t = short_box.getTransform();
     short_box_t.size(Vec3(0.3f))
         .rotate(Vec3(0, -0.40f, 0))
