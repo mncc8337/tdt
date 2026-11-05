@@ -71,7 +71,15 @@ HitInfo Mesh::hit(const Ray& ray) const {
         current_closest.uv.y = w * tri.uv0.y + u * tri.uv1.y + v * tri.uv2.y;
     };
 
-    HitInfo closest_hit = bvh_root->traverse(local_ray, hitFunc);
+    HitInfo closest_hit;
+
+    // use linear search if tri count is small
+    if(tris.size() < 16) {
+        for(int i = 0; i < tris.size(); i++)
+            hitFunc(i, closest_hit);
+    } else {
+        closest_hit = bvh_root->traverse(local_ray, hitFunc);
+    }
 
     if(closest_hit.didHit()) {
         closest_hit.material = material;

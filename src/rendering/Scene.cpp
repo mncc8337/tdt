@@ -39,11 +39,6 @@ HitInfo Scene::getClosest(const Ray& ray, Hittable*& obj) const {
         }
     };
 
-    // FIXME:
-    // object.size() is not really count of all objects
-    // we havent consider the triangles inside a mesh
-    // maybe decide what method to use on each layer too
-
     // use linear search if the object count is small
     if(objects.size() < 16) {
         HitInfo closest_hit;
