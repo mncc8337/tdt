@@ -40,7 +40,7 @@ HitInfo Scene::getClosest(const Ray& ray, Hittable*& obj) const {
     };
 
     // use linear search if the object count is small
-    if(objects.size() < 16) {
+    if(objects.size() < SCENE_BVH_THRESHOLD) {
         HitInfo closest_hit;
         for(int i = 0; i < objects.size(); i++) {
             hitFunc(i, closest_hit);

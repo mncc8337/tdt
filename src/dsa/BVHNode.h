@@ -4,7 +4,6 @@
 #include "rendering/HitInfo.h"
 #include <memory>
 #include <vector>
-#include <functional>
 
 #define PRIM_PER_LEAF 4
 
@@ -20,10 +19,8 @@ struct BVHNode {
     template <typename ObjectType>
     BVHNode(std::vector<ObjectType>& src_objects, size_t start, size_t end);
 
-    HitInfo traverse(
-        const Ray& ray,
-        std::function<void(const int, HitInfo&)> hitFunc
-    ) const;
+    template <typename HitFunc>
+    HitInfo traverse(const Ray& ray, HitFunc&& hitFunc) const;
 };
 
 #include "BVHNode.inl"

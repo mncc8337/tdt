@@ -9,6 +9,8 @@
 #include "Medium.h"
 #include "dsa/BVHNode.h"
 
+#define SCENE_BVH_THRESHOLD 2
+
 class Scene {
 private:
     std::vector<std::unique_ptr<Hittable>> objects;
