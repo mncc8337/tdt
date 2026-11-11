@@ -4,6 +4,8 @@
 #include "math/RawTriangle.h"
 #include "dsa/BVHNode.h"
 
+#define MESH_BVH_THRESHOLD 4
+
 class Mesh: public Hittable {
 private:
     std::vector<RawTriangle> tris;

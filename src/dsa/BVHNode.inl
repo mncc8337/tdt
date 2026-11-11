@@ -1,6 +1,8 @@
 #pragma once
 #include "BVHNode.h"
+#include "misc/floatcmp.h"
 #include <algorithm>
+#include <array>
 
 template <typename ObjectType>
 BVHNode::BVHNode(std::vector<ObjectType>& src_objects, size_t start, size_t end) {
@@ -54,3 +56,31 @@ BVHNode::BVHNode(std::vector<ObjectType>& src_objects, size_t start, size_t end)
     aabb = span_box;
 }
 
+template <typename HitFunc>
+HitInfo BVHNode::traverse(const Ray& ray, HitFunc&& hitFunc) const {
+    HitInfo closest_hit;
+
+    std::array<const BVHNode*, 64> node_stack;
+    size_t stack_size = 0;
+
+    const BVHNode* current_node = this;
+
+    while(true) {
+        float t_max = closest_hit.didHit() ? closest_hit.distance : FAR_DISTANCE;
+        if(current_node->aabb.hit(ray, EPSILON, t_max)) {
+            if(!current_node->isLeaf()) {
+                node_stack[stack_size++] = current_node->right.get();
+                current_node = current_node->left.get();
+                continue;
+            } else if(current_node->num_objects > 0) {
+                for(int i = 0; i < current_node->num_objects; i++)
+                    hitFunc(current_node->start_index + i, closest_hit);
+            }
+        }
+
+        if(stack_size == 0) break;
+        current_node = node_stack[--stack_size];
+    }
+
+    return closest_hit;
+}

@@ -74,7 +74,7 @@ HitInfo Mesh::hit(const Ray& ray) const {
     HitInfo closest_hit;
 
     // use linear search if tri count is small
-    if(tris.size() < 16) {
+    if(tris.size() < MESH_BVH_THRESHOLD) {
         for(int i = 0; i < tris.size(); i++)
             hitFunc(i, closest_hit);
     } else {
