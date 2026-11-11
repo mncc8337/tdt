@@ -1,9 +1,26 @@
 #include "RNG.h"
+#include <atomic>
+#include <cstdint>
 #include <numbers>
 
-std::uniform_real_distribution<float> RNG::uniform_dist(0, 1);
-std::normal_distribution<float> RNG::normal_dist(0, 1);
-std::mt19937 RNG::generator;
+// Each thread starts from a distinct, well-mixed seed. The counter is atomic
+// because several threads can touch the RNG for the first time concurrently.
+static std::atomic<std::uint32_t> seed_counter{0};
+
+// splitmix32 mixing step (Weyl increment + xor-shift-multiply avalanche)
+// turn the thread counter into a seed.
+static std::uint32_t mixSeed(std::uint32_t x) {
+    x += 0x9E3779B9u;
+    x = (x ^ (x >> 16)) * 0x21F0AAADu;
+    x = (x ^ (x >> 15)) * 0x735A2D97u;
+    return x ^ (x >> 15);
+}
+
+thread_local std::uniform_real_distribution<float> RNG::uniform_dist(0, 1);
+thread_local std::normal_distribution<float> RNG::normal_dist(0, 1);
+thread_local std::mt19937 RNG::generator(
+    mixSeed(0x51C3A7u + seed_counter.fetch_add(1, std::memory_order_relaxed))
+);
 
 float RNG::uniform() {
     return uniform_dist(generator);

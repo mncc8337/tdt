@@ -6,9 +6,9 @@
 
 class RNG {
 private:
-    static std::uniform_real_distribution<float> uniform_dist;
-    static std::normal_distribution<float> normal_dist;
-    static std::mt19937 generator;
+    static thread_local std::uniform_real_distribution<float> uniform_dist;
+    static thread_local std::normal_distribution<float> normal_dist;
+    static thread_local std::mt19937 generator;
 
 public:
     static float uniform();
