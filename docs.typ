@@ -91,6 +91,7 @@
 
 = Thư viện sử dụng
 - Thư viện đồ họa SFML kết hợp với thư viện giao diện người dùng ImGui.
+- Thư viện hộp thoại file nativefiledialog.
 - Thư viện đa luồng OpenMP được cài đặt sẵn trong GCC/Clang/MSVC.
 - Thư viện chuẩn C++: `std::vector` cho mảng động, `std::random` để sinh số ngẫu nhiên, `std::thread`/`std::atomic`/`std::mutex` để quản lý luồng và đồng bộ hóa.
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(CMakeSFMLProject LANGUAGES CXX)
+project(CMakeSFMLProject LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -36,6 +36,13 @@ FetchContent_Declare(imgui-sfml
     SYSTEM
 )
 
+FetchContent_Declare(nativefiledialog
+    GIT_REPOSITORY https://github.com/mlabbe/nativefiledialog.git
+    GIT_SHALLOW ON
+    EXCLUDE_FROM_ALL
+    SYSTEM
+)
+
 option(SFML_BUILD_AUDIO "Build audio" OFF)
 option(SFML_BUILD_NETWORK "Build network" OFF)
 
@@ -47,6 +54,7 @@ option(IMGUI_SFML_FIND_SFML "Use find_package to find SFML" OFF)
 option(IMGUI_SFML_IMGUI_DEMO "Build imgui_demo.cpp" ON)
 
 FetchContent_MakeAvailable(imgui-sfml)
+FetchContent_MakeAvailable(nativefiledialog)
 
 find_package(OpenMP REQUIRED)
 

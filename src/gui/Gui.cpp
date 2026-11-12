@@ -1,9 +1,4 @@
 #include "Gui.h"
-#include "Material.h"
-#include "Texture.h"
-
-#include <SFML/System/Time.hpp>
-
 #include <chrono>
 #include <cstring>
 #include <iostream>
@@ -14,8 +9,11 @@
 
 #include "imgui.h"
 #include "imgui-SFML.h"
+#include "nfd.h"
 
+#include "rendering/Texture.h"
 #include "rendering/texture/ColorTexture.h"
+#include "rendering/Material.h"
 #include "rendering/material/Metal.h"
 #include "rendering/material/Matte.h"
 #include "rendering/material/Dielectric.h"
@@ -127,6 +125,11 @@ void Gui::fitSprite() {
         sprite.setScale(sf::Vector2f(scale, scale));
         sprite.setPosition(sf::Vector2f((window_size.x - tex_size.x * scale) / 2.0f, 0));
     }
+}
+
+bool Gui::save(const std::filesystem::path &filename) {
+    sf::Image img(sf::Vector2u(viewport_width, viewport_height), tracer.getData());
+    return img.saveToFile(filename);
 }
 
 void Gui::renderRoutine() {
@@ -522,6 +525,22 @@ void Gui::drawTracerWindow() {
             );
             is_data_ready = true;
         });
+    }
+
+    ImGui::SameLine();
+
+    if(ImGui::Button("Save")) {
+        // TODO: confirmation dialog
+        nfdchar_t* savePath = NULL;
+        nfdresult_t result = NFD_SaveDialog("png", NULL, &savePath);
+        if (result == NFD_OKAY) {
+            save(savePath);
+            free(savePath);
+        } else if (result == NFD_CANCEL) {
+            // do nothing
+        } else {
+            printf("Error: %s\n", NFD_GetError());
+        }
     }
 
     ImGui::Separator();

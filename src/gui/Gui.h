@@ -66,6 +66,8 @@ private:
 
     void fitSprite();
 
+    bool save(const std::filesystem::path &filename);
+
     void renderRoutine();
     void handlePicking();
 
