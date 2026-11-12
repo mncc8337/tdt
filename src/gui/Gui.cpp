@@ -9,7 +9,7 @@
 
 #include "imgui.h"
 #include "imgui-SFML.h"
-#include "nfd.h"
+#include "nfd.hpp"
 
 #include "rendering/Texture.h"
 #include "rendering/texture/ColorTexture.h"
@@ -531,15 +531,17 @@ void Gui::drawTracerWindow() {
 
     if(ImGui::Button("Save")) {
         // TODO: confirmation dialog
-        nfdchar_t* savePath = NULL;
-        nfdresult_t result = NFD_SaveDialog("png,jpg,bmp,tga", NULL, &savePath);
+        NFD::Guard nfdGuard;
+        NFD::UniquePath outPath;
+        nfdfilteritem_t filterItem[] = {{"Image", "png,jpg,bmp,tga"}};
+
+        nfdresult_t result = NFD::SaveDialog(outPath, filterItem, 1);
         if (result == NFD_OKAY) {
-            save(savePath);
-            free(savePath);
+            save(outPath.get());
         } else if (result == NFD_CANCEL) {
             // do nothing
         } else {
-            printf("Error: %s\n", NFD_GetError());
+            printf("Error: %s\n", NFD::GetError());
         }
     }
 

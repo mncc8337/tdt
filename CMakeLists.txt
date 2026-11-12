@@ -37,7 +37,7 @@ FetchContent_Declare(imgui-sfml
 )
 
 FetchContent_Declare(nativefiledialog
-    GIT_REPOSITORY https://github.com/mlabbe/nativefiledialog.git
+    GIT_REPOSITORY https://github.com/btzy/nativefiledialog-extended.git
     GIT_SHALLOW ON
     EXCLUDE_FROM_ALL
     SYSTEM
