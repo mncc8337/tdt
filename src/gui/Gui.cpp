@@ -532,7 +532,7 @@ void Gui::drawTracerWindow() {
     if(ImGui::Button("Save")) {
         // TODO: confirmation dialog
         nfdchar_t* savePath = NULL;
-        nfdresult_t result = NFD_SaveDialog("png", NULL, &savePath);
+        nfdresult_t result = NFD_SaveDialog("png,jpg,bmp,tga", NULL, &savePath);
         if (result == NFD_OKAY) {
             save(savePath);
             free(savePath);
