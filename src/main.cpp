@@ -7,6 +7,7 @@
 #include "rendering/material/Matte.h"
 #include "rendering/material/Light.h"
 #include "rendering/material/Dielectric.h"
+#include "rendering/material/FineParticle.h"
 #include "rendering/hittable/Mesh.h"
 
 #include <string>
@@ -24,7 +25,21 @@ int main() {
     Medium& vacuum = scene.addMedium<Medium>("vacuum");
     scene.setGlobalMedium(vacuum);
 
-    Medium& glass = scene.addMedium<Homogeneous>("glass", 1.33f, 0.0f, 1.0f);
+    Medium& glass = scene.addMedium<Homogeneous>(
+        "glass",
+        1.33f,
+        Color(0.0f),
+        Color(0.0f),
+        1.0f
+    );
+
+    Medium& smoke = scene.addMedium<Homogeneous>(
+        "smoke",
+        1.0f,
+        Color(0.0f),
+        Color(0.5f),
+        1.0f
+    );
 
     Texture& white_tex = scene.addTexture<ColorTexture>(
         "white tex",
@@ -44,6 +59,10 @@ int main() {
     );
     Texture& glass_tex = scene.addTexture<ColorTexture>(
         "glass tex",
+        Color(1.0f)
+    );
+    Texture& smoke_tex = scene.addTexture<ColorTexture>(
+        "smoke tex",
         Color(1.0f)
     );
 
@@ -69,6 +88,11 @@ int main() {
         "glass mat",
         &glass_tex,
         &glass
+    );
+    Material& smoke_mat = scene.addMaterial<FineParticle>(
+        "smoke mat",
+        &smoke_tex,
+        (Homogeneous*)&smoke
     );
 
     auto addMesh = [&scene](
@@ -106,17 +130,17 @@ int main() {
         Vec3(0.3f, 1, 0.2f)
     );
 
-    Mesh& tall_box = addMesh("tall box", white_matte, cube_model);
+    Mesh& tall_box = addMesh("tall box", smoke_mat, cube_model);
     Transform tall_box_t = tall_box.getTransform();
     tall_box_t.scale(Vec3(0.25f, 0.6f, 0.25f))
-        .rotate(Vec3(0, 0.30f, 0))
-        .move(Vec3(0.42f, 0.6f, -0.35f));
+        .rotate(Vec3(0, 0.3f, 0))
+        .move(Vec3(0.42f, 0.605f, -0.35f));
     tall_box.setTransform(tall_box_t);
 
     Mesh& short_box = addMesh("short box", glass_mat, cube_model);
     Transform short_box_t = short_box.getTransform();
     short_box_t.scale(Vec3(0.3f))
-        .rotate(Vec3(0, -0.40f, 0))
+        .rotate(Vec3(0, -0.4f, 0))
         .move(Vec3(-0.45f, 0.305f, 0.15f));
     short_box.setTransform(short_box_t);
 

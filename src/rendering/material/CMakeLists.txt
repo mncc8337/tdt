@@ -3,6 +3,7 @@ target_sources(tdt
     Metal.cpp
     Matte.cpp
     Dielectric.cpp
+    FineParticle.cpp
     Light.cpp
 )
 

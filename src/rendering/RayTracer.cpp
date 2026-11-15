@@ -2,6 +2,7 @@
 #include "Camera.h"
 #include "Material.h"
 #include "HitInfo.h"
+#include "Medium.h"
 #include "misc/RNG.h"
 
 #include <algorithm>
@@ -67,15 +68,49 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
     Color final_color(0);
     Color throughput(1);
 
+    // use std::array instead of std::stack to reduce dynamic allocation
     // bounded by max_bounces: each bounce can push at most one medium
+    // since cpp does not accept variable templating, we can only hardcode it at 64
     std::array<const Medium*, 64> medium_stack;
     size_t medium_stack_size = 1;
     medium_stack[0] = &scene.getGlobalMedium();
 
     for(unsigned bounces = 0; bounces < max_bounces; bounces++) {
+        // russian roulette
+        if(bounces > 3) {
+            float max_channel = std::max({
+                throughput.x,
+                throughput.y,
+                throughput.z
+            });
+            if (RNG::uniform() > max_channel) {
+                break;
+            }
+            throughput /= max_channel; 
+        }
+
         Hittable* obj;
         HitInfo rec = scene.getClosest(ray, obj);
+
+        const Medium* current_medium = medium_stack[medium_stack_size - 1];
+
+        // try to transmit to the object (distance = rec.distance)
+        float transmitted_distance = current_medium->transmit(ray, throughput, rec.distance);
+
+        // FIXME:
+        // we could try to transmit through the medium with inf distance first
+        // to get the maximum distance we could travel without being intercept by the medium
+        // then we could use the transmitted distance as the higher bound for our intersection tests
+        // which could reduce the number of tests we need to perform
+
+        if(transmitted_distance < rec.distance) {
+            // failed to transmit to the object
+            // got scattered by the medium in the way
+            continue;
+        }
+
         if(!obj) {
+            // only hit the skybox if the ray hit neither the objects nor the current medium
             // TODO: impl SkyBox class
             // float ncos = (ray.direction.dot(Vec3(0, 1, 0)) + 1.0f) / 2.0f;
             // Vec3 sky_color = Vec3(1.0f, 0.514f, 0.451f).lerp(
@@ -86,11 +121,6 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
             break;
         }
 
-        const Medium* current_medium = medium_stack[medium_stack_size - 1];
-
-        // attenuate the segment the ray just travelled through,
-        // then collect light emitted at the surface it landed on
-        throughput *= current_medium->transmit(rec.distance);
         final_color += throughput * rec.material->emitted(rec);
 
         // surface scattering weight.
@@ -118,19 +148,6 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
                     medium_stack_size--;
                 }
             }
-        }
-
-        // russian roulette
-        if(bounces > 3) {
-            float max_channel = std::max({
-                throughput.x,
-                throughput.y,
-                throughput.z
-            });
-            if (RNG::uniform() > max_channel) {
-                break;
-            }
-            throughput /= max_channel; 
         }
     }
 

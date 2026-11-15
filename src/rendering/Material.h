@@ -6,6 +6,13 @@
 #include "Medium.h"
 #include "HitInfo.h"
 
+// FIXME:
+// the name material is misleading
+// since we only handle surface scattering/emission here
+// consider renaming it to Surface or Texture (and rename Texture to something else)
+// or move the scatter method to Texture and only treat Material as the container for
+// Medium and Texture
+
 enum class ScatterResult {
     Terminated, // path ends here (hit an emitter, absorbed, or no valid continuation)
     Scattered,  // ray continues within the same medium
