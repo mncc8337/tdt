@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdint>
 #include <vector>
 
 #include "Camera.h"
@@ -17,7 +16,6 @@ private:
     unsigned pass = 0;
 
     std::vector<Color> buffer;
-    std::vector<std::uint32_t> pixels;
 
 public:
     RayTracer(
@@ -39,7 +37,7 @@ public:
     const unsigned& getSamplesPerPixel() const;
     void setSamplesPerPixel(unsigned spp);
 
-    const std::uint8_t* getData() const;
+    const std::vector<Color>& getBuffer() const;
 
     const Color trace(Ray ray, const Scene& scene) const;
 

@@ -38,15 +38,15 @@ HitInfo Mesh::hit(const Ray& ray) const {
 
         float tri_t_max = current_closest.didHit() ? current_closest.distance : FAR_DISTANCE;
 
-        Vec3 edge1 = tri.v1 - tri.v0;
-        Vec3 edge2 = tri.v2 - tri.v0;
+        const Vec3& edge1 = tri.edge1;
+        const Vec3& edge2 = tri.edge2;
 
         Vec3 pvec = local_ray.direction.cross(edge2);
         float det = edge1.dot(pvec);
         if(fequal0(det)) return;
 
         float inv_det = 1.0f / det;
-        Vec3 tvec = local_ray.origin - tri.v0;
+        Vec3 tvec = local_ray.origin - tri.origin;
 
         float u = tvec.dot(pvec) * inv_det;
         if(u < 0.0f || u > 1.0f) return;

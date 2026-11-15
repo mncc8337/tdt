@@ -63,11 +63,13 @@ HitInfo BVHNode::traverse(const Ray& ray, HitFunc&& hitFunc) const {
     std::array<const BVHNode*, 64> node_stack;
     size_t stack_size = 0;
 
+    const Vec3 inv_direction = ray.direction.inverse();
+
     const BVHNode* current_node = this;
 
     while(true) {
         float t_max = closest_hit.didHit() ? closest_hit.distance : FAR_DISTANCE;
-        if(current_node->aabb.hit(ray, EPSILON, t_max)) {
+        if(current_node->aabb.hit(ray, inv_direction, EPSILON, t_max)) {
             if(!current_node->isLeaf()) {
                 node_stack[stack_size++] = current_node->right.get();
                 current_node = current_node->left.get();

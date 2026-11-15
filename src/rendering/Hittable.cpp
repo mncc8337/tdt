@@ -44,7 +44,7 @@ const Transform& Hittable::getTransform() const {
     return transform;
 }
 
-void Hittable::setTransform(const Transform t) {
+void Hittable::setTransform(Transform t) {
     transform = t;
     global_aabb = calculateGlobalAABB();
 }

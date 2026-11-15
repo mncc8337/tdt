@@ -88,7 +88,7 @@ int main() {
     ) {
         Mesh& plane = addMesh(name, material, plane_model);
         Transform plane_t = plane.getTransform();
-        plane_t.size(scale).rotate(rotation).move(position);
+        plane_t.scale(scale).rotate(rotation).move(position);
         plane.setTransform(plane_t);
     };
 
@@ -108,16 +108,16 @@ int main() {
 
     Mesh& tall_box = addMesh("tall box", white_matte, cube_model);
     Transform tall_box_t = tall_box.getTransform();
-    tall_box_t.size(Vec3(0.25f, 0.6f, 0.25f))
+    tall_box_t.scale(Vec3(0.25f, 0.6f, 0.25f))
         .rotate(Vec3(0, 0.30f, 0))
         .move(Vec3(0.42f, 0.6f, -0.35f));
     tall_box.setTransform(tall_box_t);
 
     Mesh& short_box = addMesh("short box", glass_mat, cube_model);
     Transform short_box_t = short_box.getTransform();
-    short_box_t.size(Vec3(0.3f))
+    short_box_t.scale(Vec3(0.3f))
         .rotate(Vec3(0, -0.40f, 0))
-        .move(Vec3(-0.45f, 0.3f, 0.15f));
+        .move(Vec3(-0.45f, 0.305f, 0.15f));
     short_box.setTransform(short_box_t);
 
     scene.buildBVH();

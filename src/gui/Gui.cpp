@@ -11,6 +11,7 @@
 #include "imgui-SFML.h"
 #include "nfd.hpp"
 
+#include "misc/ColorUtils.h"
 #include "rendering/Texture.h"
 #include "rendering/texture/ColorTexture.h"
 #include "rendering/Material.h"
@@ -32,7 +33,8 @@ Gui::Gui(Camera& camera, Scene& scene, unsigned width, unsigned height):
     window(sf::VideoMode({width, height}), "tdt"),
     texture(sf::Vector2u(width, height)),
     sprite(texture),
-    front_pixels(width * height)
+    tracer_buffer_copy(width * height),
+    display_pixels(width * height)
 {
     if(!ImGui::SFML::Init(window)) {
         throw std::runtime_error("Failed to initialize imgui.");
@@ -43,7 +45,7 @@ Gui::Gui(Camera& camera, Scene& scene, unsigned width, unsigned height):
 }
 
 Gui::~Gui() {
-    is_running = false;
+    is_gui_running = false;
     if(render_thread.joinable()) {
         render_thread.join();
     }
@@ -82,9 +84,9 @@ void Gui::applyPendingActions() {
     }
     pending_actions.clear();
 
-    if(dirty_geometry) {
+    if(is_geometry_dirty) {
         scene.buildBVH();
-        dirty_geometry = false;
+        is_geometry_dirty = false;
     }
 
     // the scene has changed
@@ -128,19 +130,39 @@ void Gui::fitSprite() {
 }
 
 bool Gui::save(const std::filesystem::path &filename) {
-    sf::Image img(sf::Vector2u(viewport_width, viewport_height), tracer.getData());
+    // take a stable snapshot, then resolve on the GUI thread so saving does
+    // not add post-processing work to the render loop
+    std::vector<Color> buffer;
+    unsigned pass;
+    unsigned width;
+    unsigned height;
+    {
+        std::lock_guard<std::mutex> lock(scene_mutex);
+        buffer = tracer.getBuffer();
+        pass = tracer.getPass();
+        width = tracer.getViewportWidth();
+        height = tracer.getViewportHeight();
+    }
+
+    std::vector<std::uint32_t> pixels;
+    resolvePixels(buffer, pixels, pass, exposure, gamma, tonemap);
+
+    sf::Image img(
+        sf::Vector2u(width, height),
+        reinterpret_cast<const std::uint8_t*>(pixels.data())
+    );
     return img.saveToFile(filename);
 }
 
 void Gui::renderRoutine() {
     sf::Clock delta_clock;
 
-    while(is_running) {
+    while(is_gui_running) {
         // wait when is paused or the gui requested the lock
-        while(is_running && (is_paused || lock_requested)) {
+        while(is_gui_running && (is_rendering_paused || lock_requested)) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
-        if(!is_running) break;
+        if(!is_gui_running) break;
 
         // drop the time spent spinning so it is not counted as render time
         delta_clock.restart();
@@ -151,13 +173,14 @@ void Gui::renderRoutine() {
             tracer.render(camera, scene);
 
             // publish only if the GUI consumed the previous frame, so
-            // front_pixels is never read while it is being written
+            // front_buffer is never read while it is being written
             if(!is_data_ready) {
                 std::memcpy(
-                    front_pixels.data(),
-                    tracer.getData(),
-                    front_pixels.size() * sizeof(std::uint32_t)
+                    tracer_buffer_copy.data(),
+                    tracer.getBuffer().data(),
+                    tracer_buffer_copy.size() * sizeof(Color)
                 );
+                front_pass = tracer.getPass();
                 is_data_ready = true;
             }
         }
@@ -167,7 +190,7 @@ void Gui::renderRoutine() {
         std::clog << "\r#" << tracer.getPass() << " dt: " << last_dt << "ms   " << std::flush;
 
         if(target_frame > 0 and tracer.getPass() > target_frame) {
-            is_paused = true;
+            is_rendering_paused = true;
         }
     }
 
@@ -228,29 +251,34 @@ void Gui::drawObjectPropertiesSection(Hittable* object) {
     ImGui::SeparatorText("Transform");
 
     bool changed = false;
-    changed |= ImGui::DragFloat3("Translation", &edited.translation.x, 0.05f);
 
+    Vec3 e_translation = edited.getTranslation();
+    changed |= ImGui::DragFloat3("Translation", &e_translation.x, 0.05f);
+    edited.move(e_translation);
+
+    Vec3 e_scale = edited.getSize();
     ImGui::Checkbox("Uniform scale", &uniform_scale);
     if(uniform_scale) {
-        float s = edited.scale.x;
+        float s = (e_scale.x + e_scale.y + e_scale.z) / 3.0f;
         if(ImGui::DragFloat("Scale", &s, 0.01f)) {
-            edited.scale = Vec3(s);
+            edited.scale(s);
             changed = true;
         }
     } else {
-        changed |= ImGui::DragFloat3("Scale", &edited.scale.x, 0.01f);
+        changed |= ImGui::DragFloat3("Scale", &e_scale.x, 0.01f);
+        edited.scale(e_scale);
     }
 
-    Vec3 angles = edited.rotation_angles;
-    if(ImGui::DragFloat3("Rotation (rad)", &angles[0], 0.01f)) {
-        edited.rotate(angles);
+    Vec3 e_angles = edited.getRotation();
+    if(ImGui::DragFloat3("Rotation (rad)", &e_angles[0], 0.01f)) {
+        edited.rotate(e_angles);
         changed = true;
     }
 
     if(changed) {
         postAction([this, obj = object, edited]() {
             obj->setTransform(edited);
-            dirty_geometry = true;
+            is_geometry_dirty = true;
         });
     }
 
@@ -259,7 +287,7 @@ void Gui::drawObjectPropertiesSection(Hittable* object) {
         if(ImGui::DragFloat("Radius", &radius, 0.01f, 0.001f, 1000.0f)) {
             postAction([this, sphere, radius]() {
                 sphere->setRadius(radius);
-                dirty_geometry = true;
+                is_geometry_dirty = true;
             });
         }
     }
@@ -337,14 +365,14 @@ void Gui::drawMediumPropertiesSection(Medium* medium) {
         Color sigma = h->getSigma();
         if(ImGui::ColorEdit3("Absorption", &sigma[0])) {
             postAction([h, sigma]() {
-                h->getSigma() = sigma;
+                h->setSigma(sigma);
             });
         }
 
         float density = h->getDensity();
         if(ImGui::DragFloat("Density", &density, 0.01f, 0.0f, 1000.0f)) {
             postAction([h, density]() {
-                h->getDensity() = density;
+                h->setDensity(density);
             });
         }
     } else {
@@ -465,11 +493,6 @@ void Gui::drawMediumsWindow() {
 void Gui::drawCameraWindow() {
     ImGui::Begin("Camera");
 
-    // TODO: move this to post processing window
-    float exposure = camera.getExposure();
-    ImGui::DragFloat("Exposure", &exposure, 0.05f, 0.01f, 100.0f);
-    camera.setExposure(exposure);
-
     float focal_length = camera.getFocalLength();
     if(ImGui::DragFloat("Focal length", &focal_length, 0.01f, 0.01f, 100.0f)) {
         postAction([this, focal_length]() {
@@ -501,12 +524,34 @@ void Gui::drawCameraWindow() {
     ImGui::End();
 }
 
+void Gui::drawPostprocessingWindow() {
+    ImGui::Begin("Postprocessing");
+
+    if(ImGui::Combo(
+        "Tonemap",
+        &(int&)tonemap,
+        "Reinhard\0Exposure\0"
+    )) {
+        is_display_dirty = true;
+    }
+
+    if(ImGui::DragFloat("Exposure", &exposure, 0.05f, 0.01f, 100.0f)) {
+        is_display_dirty = true;
+    }
+
+    if(ImGui::DragFloat("Gamma", &gamma, 0.01f, 0.1f, 5.0f)) {
+        is_display_dirty = true;
+    }
+
+    ImGui::End();
+}
+
 void Gui::drawTracerWindow() {
     ImGui::Begin("Tracer");
 
-    if(ImGui::Button(is_paused ? "Resume" : "Pause")) {
+    if(ImGui::Button(is_rendering_paused ? "Resume" : "Pause")) {
         if(target_frame == 0 or tracer.getPass() <= target_frame)
-            is_paused = !is_paused;
+            is_rendering_paused = !is_rendering_paused;
     }
 
     ImGui::SameLine();
@@ -519,10 +564,11 @@ void Gui::drawTracerWindow() {
             // also clear the published frame, otherwise a reset while
             // paused keeps showing the last image
             std::memset(
-                front_pixels.data(),
+                tracer_buffer_copy.data(),
                 0,
-                front_pixels.size() * sizeof(std::uint32_t)
+                tracer_buffer_copy.size() * sizeof(Color)
             );
+            front_pass = 0;
             is_data_ready = true;
         });
     }
@@ -564,7 +610,7 @@ void Gui::drawTracerWindow() {
         static int tf = target_frame;
         ImGui::InputInt("Target frame", &tf, 10, 100);
         if(tf < 0) tf = 0;
-        is_paused = tf <= tracer.getPass();
+        is_rendering_paused = tf <= tracer.getPass();
         target_frame = tf;
     } else {
         target_frame = 0;
@@ -582,7 +628,8 @@ void Gui::drawTracerWindow() {
             );
             if(texture.resize(new_tex_size)) {
                 is_data_ready = false;
-                front_pixels.resize(new_tex_size.x * new_tex_size.y);
+                tracer_buffer_copy.resize(new_tex_size.x * new_tex_size.y);
+                display_pixels.resize(new_tex_size.x * new_tex_size.y);
                 fitSprite();
             }
         });
@@ -598,7 +645,8 @@ void Gui::drawTracerWindow() {
             );
             if(texture.resize(new_tex_size)) {
                 is_data_ready = false;
-                front_pixels.resize(new_tex_size.x * new_tex_size.y);
+                tracer_buffer_copy.resize(new_tex_size.x * new_tex_size.y);
+                display_pixels.resize(new_tex_size.x * new_tex_size.y);
                 fitSprite();
             }
         });
@@ -622,7 +670,7 @@ void Gui::drawTracerWindow() {
 }
 
 void Gui::run() {
-    is_running = true;
+    is_gui_running = true;
     render_thread = std::thread(&Gui::renderRoutine, this);
 
     sf::Clock delta_clock;
@@ -643,11 +691,25 @@ void Gui::run() {
             break;
         }
 
-        if(is_data_ready) {
-            // front_pixels is only written while is_data_ready is false,
-            // so this read never races the renderer; is_data_ready is
-            // lowered only after the upload finished
-            texture.update(reinterpret_cast<const std::uint8_t*>(front_pixels.data()));
+        if(is_display_dirty || is_data_ready) {
+            // apply post processing to the copied buffer
+            // whenever data is ready or post processing params changed
+            resolvePixels(
+                tracer_buffer_copy,
+                display_pixels,
+                front_pass,
+                exposure,
+                gamma,
+                tonemap
+            );
+            is_display_dirty = false;
+
+            // then change the displaying image
+            texture.update(
+                reinterpret_cast<const std::uint8_t*>(
+                    display_pixels.data()
+                )
+            );
             is_data_ready = false;
         }
 
@@ -661,6 +723,7 @@ void Gui::run() {
         drawTexturesWindow();
         drawMediumsWindow();
         drawCameraWindow();
+        drawPostprocessingWindow();
         drawTracerWindow();
 
         // apply whatever the widgets changed this frame
@@ -673,6 +736,6 @@ void Gui::run() {
         window.display();
     }
 
-    is_running = false;
+    is_gui_running = false;
     render_thread.join();
 }

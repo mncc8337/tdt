@@ -14,7 +14,9 @@ struct BVHNode {
     int start_index = 0;
     int num_objects = 0;
 
-    bool isLeaf() const;
+    bool isLeaf() const {
+        return !left && !right;
+    }
 
     template <typename ObjectType>
     BVHNode(std::vector<ObjectType>& src_objects, size_t start, size_t end);

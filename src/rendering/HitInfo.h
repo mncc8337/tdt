@@ -13,5 +13,7 @@ struct HitInfo {
     bool front_face;
     Vec2 uv;
 
-    bool didHit() const;
+    bool didHit() const {
+        return distance > 0.0f;
+    }
 };

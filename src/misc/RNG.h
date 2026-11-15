@@ -15,7 +15,7 @@ public:
     static float uniform(float from, float to);
     static float normal();
     static Vec3 direction();
-    static Vec3 directionFast();
+    static Vec3 cosineHemisphere(const Vec3 n);
     static Vec2 pointInCircle(const float radius = 1.0f);
     static Vec3 vec3();
     static Vec2 vec2();

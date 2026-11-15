@@ -44,14 +44,6 @@ void Camera::setFocalLength(const float f) {
     focal_length = f;
 }
 
-const float& Camera::getExposure() const {
-    return exposure;
-}
-
-void Camera::setExposure(const float e) {
-    exposure = e;
-}
-
 const float& Camera::getAperture() const {
     return aperture;
 }

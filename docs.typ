@@ -84,7 +84,7 @@
 - Xây dựng các chức năng tương tác thời gian thực:
   - Lưu và tải cảnh.
   - Thay đổi thuộc tính vật thể (vị trí, góc quay, tỉ lệ, bán kính, màu sắc, chiết suất, độ nhám, cường độ sáng).
-  - Điều hướng Camera (vị trí, điểm nhìn, tiêu cự, khẩu độ, phơi sáng).
+  - Điều hướng Camera (vị trí, điểm nhìn, tiêu cự, khẩu độ) và cửa sổ Postprocessing cho độ phơi sáng, gamma và toán tử tone mapping.
   - Chọn vật thể trực tiếp trên khung hình.
   - Thay đổi độ phân giải khung hình, số lần dội tối đa và số mẫu mỗi điểm ảnh.
   - Tạm dừng/tiếp tục và đặt lại quá trình tích lũy.
@@ -123,7 +123,13 @@ Các sơ đồ lớp dưới đây được xây dựng trực tiếp từ cấu
             "# is_running, is_paused, is_data_ready: atomic<bool>",
             "# lock_requested: atomic<bool>",
             "# pending_actions: vector<function<void()>>",
-            "# front_pixels: vector<uint32_t>",
+            "# front_buffer: vector<Color>",
+            "# front_pass: unsigned",
+            "# display_pixels: vector<uint32_t>",
+            "# exposure: float",
+            "# gamma: float",
+            "# tonemap: Tonemap",
+            "# display_dirty: bool",
             "...",
           ),
           (
@@ -143,11 +149,10 @@ Các sơ đồ lớp dưới đây được xây dựng trực tiếp từ cấu
             "# samples_per_pixel: unsigned = 4",
             "# pass: unsigned",
             "# buffer: vector<Color>",
-            "# pixels: vector<uint32_t>",
           ),
           (
             "+ RayTracer(width, height)",
-            "+ getData(): const uint8_t*",
+            "+ getBuffer(): const vector<Color>&",
             "+ trace(ray: Ray, scene: const Scene&): Color",
             "+ reset()",
             "+ render(camera: const Camera&, scene: const Scene&)",
@@ -157,7 +162,7 @@ Các sơ đồ lớp dưới đây được xây dựng trực tiếp từ cấu
         node((-1, 1.3), class(
           "Camera",
           (
-            "# focal_length, exposure, aperture: float",
+            "# focal_length, aperture: float",
             "# position, lookat: Vec3",
             "# w, u, v: Vec3",
           ),
@@ -218,7 +223,7 @@ Các sơ đồ lớp dưới đây được xây dựng trực tiếp từ cấu
 
 `RayTracer` là thư viện độc lập với giao diện: nó chỉ nhận `Camera` và `Scene` khi chạy phương thức `render()`. Điều này giúp cho người sử dụng thư viện có thể dựng/chuyển cảnh, kết xuất ảnh linh hoạt thông qua mã lệnh mà không cần giao diện người dùng.
 
-`Gui` sở hữu một `RayTracer`, nó chạy vòng lặp kết xuất và vòng lặp giao diện trên hai luồng riêng biệt. Vì cả 2 luồng đều có thể truy cập đến dữ liệu cảnh như `scene`, `tracer` và `camera`, `Gui` còn sở hữu `scene_mutex` để khóa cảnh, ngăn việc 2 luồng này cùng truy cập và thay đổi dữ liệu cùng một lúc. Luồng kết xuất chỉ hoạt động khi nó giữ `scene_mutex`, trong khi luồng giao diện luôn hoạt động trong suốt vòng đời chương trình. Mọi thay đổi từ giao diện được đưa vào `pending_actions` và chỉ áp dụng khi luồng giao diện lấy được `scene_mutex`; sau khi áp dụng hết các sửa đổi trong `pending_actions` thì nó ngay lập tức thả `scene_mutex` để luồng kết xuất hoạt động trở lại. Luồng giao diện có thể yêu cầu luồng kết xuất thả `scene_mutex` bằng cờ `lock_requested`. Sau mỗi lượt, luồng kết xuất sao chép ảnh từ `tracer` sang `front_pixels` rồi bật cờ `is_data_ready`; luồng giao diện chỉ đọc bộ đệm này khi cờ đã bật, sau đó mới tải lên `sf::Texture`. Thiết kế này giúp luồng giao diện luôn luôn hoạt động mà không bị dừng lại, làm cho trải nghiệm người dùng mượt mà.
+`Gui` sở hữu một `RayTracer`, nó chạy vòng lặp kết xuất và vòng lặp giao diện trên hai luồng riêng biệt. Vì cả 2 luồng đều có thể truy cập đến dữ liệu cảnh như `scene`, `tracer` và `camera`, `Gui` còn sở hữu `scene_mutex` để khóa cảnh, ngăn việc 2 luồng này cùng truy cập và thay đổi dữ liệu cùng một lúc. Luồng kết xuất chỉ hoạt động khi nó giữ `scene_mutex`, trong khi luồng giao diện luôn hoạt động trong suốt vòng đời chương trình. Mọi thay đổi từ giao diện được đưa vào `pending_actions` và chỉ áp dụng khi luồng giao diện lấy được `scene_mutex`; sau khi áp dụng hết các sửa đổi trong `pending_actions` thì nó ngay lập tức thả `scene_mutex` để luồng kết xuất hoạt động trở lại. Luồng giao diện có thể yêu cầu luồng kết xuất thả `scene_mutex` bằng cờ `lock_requested`. Sau mỗi lượt, luồng kết xuất sao chép bộ đệm HDR từ `tracer` sang `front_buffer` (kèm số lượt `front_pass`) rồi bật cờ `is_data_ready`; luồng giao diện chỉ đọc bộ đệm này khi cờ đã bật, sau đó mới hậu kỳ sang `display_pixels` và tải lên `sf::Texture`. Thiết kế này giúp luồng giao diện luôn luôn hoạt động mà không bị dừng lại, làm cho trải nghiệm người dùng mượt mà.
 
 `BVHNode` cài đặt cấu trúc cây phân vùng không gian để tăng tốc tốc độ duyệt giao cắt giữa tia và các vật thể (sẽ được nói rõ hơn ở phần sau).
 
@@ -288,8 +293,11 @@ Các lớp `Hittable`, `Material`, `Texture` và `Medium` cùng kế thừa `Nam
             "# rotation: Mat3x3",
             "# rotation_angles: Vec3",
             "# translation: Vec3",
+            "# inverse_rotation: Mat3x3",
+            "# inverse_scale: Vec3",
           ),
           (
+            "+ refreshInverse()",
             "+ pointApply(v: Vec3&): Vec3",
             "+ pointApplyInverse(v: Vec3&): Vec3",
             "+ dirApply(v: Vec3&): Vec3",
@@ -348,7 +356,7 @@ Các lớp `Hittable`, `Material`, `Texture` và `Medium` cùng kế thừa `Nam
         node((1.9, 2), class(
           "RawTriangle",
           (
-            "# v0, v1, v2: Vec3",
+            "# origin, edge1, edge2: Vec3",
             "# uv0, uv1, uv2: Vec2",
           ),
           (
@@ -382,7 +390,7 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
 
 - `Sphere` chỉ lưu bán kính; tâm của nó nằm tại gốc không gian cục bộ `(0, 0, 0)`, còn vị trí trong thế giới được xác định bởi `Transform.translation`.
 - `Mesh` quản lý một danh sách `RawTriangle` và một cây BVH (`BVHNode`) để tăng tốc truy vấn giao cắt trên lưới lớn, đồng thời cài đặt thuật toán Moller–Trumbore để kiểm tra giao cắt tia–tam giác và nội suy tọa độ `uv`.
-- `RawTriangle` chỉ lưu hình học (các đỉnh và tọa độ kết cấu), không chứa logic giao cắt.
+- `RawTriangle` chỉ lưu hình học (một đỉnh gốc, hai vector cạnh và tọa độ kết cấu), không chứa logic giao cắt. Cách lưu này cho phép thuật toán Moller–Trumbore dùng trực tiếp hai cạnh mà không phải tính lại mỗi lần kiểm tra giao cắt.
 
 #figure(
   block(breakable: false, width: 100%)[
@@ -545,12 +553,15 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
           (
             "# sigma: Color",
             "# density: float",
+            "# eff_sigma: Color",
           ),
           (
             "+ Homogeneous(name, ior, sigma, density)",
             "+ transmit(distance): Color",
-            "+ getSigma(): Color&",
-            "+ getDensity(): float&",
+            "+ getSigma(): const Color&",
+            "+ setSigma(sigma: const Color&)",
+            "+ getDensity(): float",
+            "+ setDensity(density: float)",
           )
         ), name: <homogeneous>),
 
@@ -642,14 +653,13 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
           "AABB",
           (
             "# minp, maxp: Vec3",
-            "# centroid: Vec3",
           ),
           (
             "+ AABB(p: Vec3 = Vec3(0))",
             "+ AABB(points: initializer_list<Vec3>)",
             "+ extend(p: Vec3&)",
             "+ extend(aabb: AABB&)",
-            "+ hit(ray: Ray&, tmin, tmax): bool",
+            "+ hit(ray: Ray&, inv_direction: Vec3&, tmin, tmax): bool",
             "+ operator+(p: Vec3&): AABB",
             "+ operator+(aabb: AABB&): AABB",
           )
@@ -658,7 +668,7 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
         node((1, 2.8), class-sm(
           "RawTriangle",
           (
-            "# v0, v1, v2: Vec3",
+            "# origin, edge1, edge2: Vec3",
             "# uv0, uv1, uv2: Vec2",
           ),
           (
@@ -708,7 +718,7 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
             "+ {static} uniform(from, to): float",
             "+ {static} normal(): float",
             "+ {static} direction(): Vec3",
-            "+ {static} directionFast(): Vec3",
+            "+ {static} cosineHemisphere(n): Vec3",
             "+ {static} pointInCircle(radius = 1.0f): Vec2",
             "+ {static} vec3(): Vec3",
             "+ {static} vec2(): Vec2",
@@ -784,6 +794,8 @@ Các công thức nghiệm ở trên dùng trực tiếp $arrow(o)$ và $arrow(d
 $ arrow(o)_"local" = S^(-1) R^T (arrow(o)_"world" - arrow(T)), quad arrow(d)_"local" = S^(-1) R^T arrow(d)_"world" $
 Lưu ý: vì $R$ là ma trận quay, tức nó là ma trận trực giao, do đó $R^(-1) = R^T$
 
+Để tránh chuyển vị $R^T$ và chia cho $S$ trên mỗi tia, `Transform` lưu sẵn `inverse_rotation` $= R^T$ và `inverse_scale` $= 1/S$. Hai trường này được cập nhật trong `rotate()`, `size()` và `refreshInverse()` mỗi khi phép biến đổi thay đổi. Nhờ vậy `pointApplyInverse`/`dirApplyInverse` chỉ còn một phép nhân ma trận - vector.
+
 Phép biến đổi nghịch đảo đưa tia vào không gian cục bộ, nơi mặt cầu vẫn là mặt cầu bán kính $r$. Sau đó chạy thuật toán giao cắt với mặt cầu bán kính $r$ đặt tại gốc tọa độ như bình thường để có được giao điểm $arrow(d)_"local"$ và pháp tuyến $arrow(n)_"local"$ trên không gian cục bộ.
 
 Sau đó các đại lượng được đưa trở lại không gian thế giới:
@@ -802,6 +814,7 @@ Do $arrow(p)_"word"$, $arrow(d)_"world"$ cùng hướng và $|arrow(d)_"world"| 
 
 === Đầu vào
 - Tia cần kiểm tra `ray` với gốc `origin` và hướng `direction`.
+- `inv_direction` $= 1/"direction"$, được tính một lần trước khi duyệt BVH.
 - Hộp bao `AABB` được biểu diễn bởi hai điểm đối diện `minp` và `maxp`.
 - Khoảng tham số hợp lệ $[t_min, t_max]$. Trong quá trình duyệt BVH, $t_min$ thường bằng `EPSILON` và $t_max$ bằng khoảng cách tới va chạm gần nhất hoặc `FAR_DISTANCE`.
 
@@ -823,10 +836,11 @@ Ban đầu $t_"enter" = t_min$ và $t_"exit" = t_max$. Sau mỗi trục, nếu $
 Về mặt hình học, $t_"enter"$ là tham số mà tia bắt đầu đi vào hộp, còn $t_"exit"$ là tham số mà tia đi ra khỏi hộp. Nếu $t_"exit" < t_"enter"$, tia đi qua các slab theo thứ tự không hợp lệ, tức là không có đoạn nào nằm đồng thời trong cả ba slab.
 
 ```cpp
+// inv_direction = 1/ray.direction, được tính một lần cho cả lượt duyệt BVH
 for (int a = 0; a < 3; ++a) {
-    float invD = 1.0f / ray.direction.axis[a];
-    float t0 = (minp[a] - ray.origin[a]) * invD;
-    float t1 = (maxp[a] - ray.origin[a]) * invD;
+    float invD = inv_direction.axis[a];
+    float t0 = (minp.axis[a] - ray.origin.axis[a]) * invD;
+    float t1 = (maxp.axis[a] - ray.origin.axis[a]) * invD;
 
     if (invD < 0.0f) std::swap(t0, t1);
 
@@ -838,9 +852,11 @@ for (int a = 0; a < 3; ++a) {
 return true;
 ```
 
+Nghịch đảo hướng tia `1/direction` được tính một lần ở đầu `BVHNode::traverse` rồi truyền vào `AABB::hit`, thay vì chia lại cho từng nút. Mỗi tia thường đi qua hàng chục nút nên việc này loại bỏ phần lớn phép chia.
+
 Trường hợp $d_a = 0$ được xử lý dựa trên số học dấu phẩy động của IEEE 754: `invD` là $plus.minus infinity$, nên $t_0$ và $t_1$ trở thành các giá trị vô cực. Cách này cho kết quả đúng khi gốc tia không nằm đúng trên mặt slab. Nếu gốc tia nằm chính xác trên mặt slab và $d_a = 0$, phép nhân $0 dot infinity$ có thể tạo ra `NaN`; khi đó cần xử lý riêng nếu muốn đảm bảo ổn định số học tuyệt đối.
 
-Phép kiểm tra AABB là cơ sở để cắt tỉa cây BVH. Trong `BVHNode::traverse`, mỗi nút được kiểm tra bằng `current_node->aabb.hit(ray, EPSILON, t_max)`. Nếu kết quả là `false`, toàn bộ nhánh con của nút bị bỏ qua; nếu là `true`, thuật toán tiếp tục đi xuống nút lá để kiểm tra chi tiết với các hình học bên trong.
+Phép kiểm tra AABB là cơ sở để cắt tỉa cây BVH. Trong `BVHNode::traverse`, mỗi nút được kiểm tra bằng `current_node->aabb.hit(ray, inv_direction, EPSILON, t_max)`, với `inv_direction = 1/ray.direction` được tính một lần trước khi duyệt. Nếu kết quả là `false`, toàn bộ nhánh con của nút bị bỏ qua; nếu là `true`, thuật toán tiếp tục đi xuống nút lá để kiểm tra chi tiết với các hình học bên trong.
 
 Độ phức tạp của một phép kiểm tra AABB là $O(1)$ vì chỉ cần xử lý ba trục.
 
@@ -955,7 +971,7 @@ Chương trình duyệt lặp bằng hàng đợi `std::queue<const BVHNode*>`, 
 + Lặp cho đến khi hàng đợi rỗng:
   + Lấy `current_node = node_queue.front()` rồi gọi `node_queue.pop()`.
   + Lấy `t_max = closest_hit.distance`; nếu `closest_hit` rỗng thì `t_max = FAR_DISTANCE` (tức vô cùng).
-  + Kiểm tra `current_node->aabb.hit(ray, EPSILON, t_max)`:
+  + Kiểm tra `current_node->aabb.hit(ray, inv_direction, EPSILON, t_max)`, với `inv_direction` đã tính sẵn:
     - Nếu không cắt: bỏ qua lượt này.
     - Nếu cắt và là nút nhánh (`left`/`right` khác `nullptr`): thêm `left` và `right` vào hàng đợi.
     - Nếu cắt và là nút lá: gọi `hitFunc` cho từng vật thể trong nút; `closest_hit` được cập nhật sau mỗi va chạm.
@@ -999,13 +1015,15 @@ $ arrow(d)_"new" = eta arrow(d) + (eta cos theta - sqrt(1 - eta^2 (1 - cos^2 the
 === Phương pháp
 Với vật liệu kim loại `Metal`, hướng phản xạ gương được tính bởi:
 $ arrow(d)_"spec" = arrow(d) - 2(arrow(d) dot arrow(n))arrow(n) $
-Khi độ nhám $r > 0$, một vector ngẫu nhiên $arrow(v)_"rand"$ (chưa chuẩn hóa) được nhân với $r$ rồi cộng vào hướng phản xạ:
-$ arrow(d)_"new" = "normalize"(arrow(d)_"spec" + r arrow(v)_"rand") $
-Nếu $arrow(d)_"new" dot arrow(n) <= 0$, tức hướng mới quay ra sau bề mặt, chương trình phản xạ lại vector này qua $arrow(n)$ trước khi chuẩn hóa.
 
-Vật liệu nhám `Matte` chính là trường hợp đặc biệt của vật liệu kim loại với độ nhám $r = 1$. Do đó thuật toán sinh tia tán xạ của `Matte` về cơ bản là thuật toán sinh tia tán xạ của `Metal` nhưng được tối ưu riêng cho trường hợp này:
-$ arrow(d)_"new" = "normalize"(arrow(n) + arrow(v)_"rand") $
-trong đó $arrow(v)_"rand"$ là một vector đơn vị ngẫu nhiên.
+Nếu độ nhám $r = 0$, tia phản xạ gương được dùng trực tiếp và không lấy mẫu ngẫu nhiên. Nếu $r > 0$, chương trình lấy một mẫu $arrow(v)_"cos"$ theo phân phối cosine quanh $arrow(d)_"spec"$ rồi nội suy tuyến tính theo $r$:
+$ arrow(d)_"new" = "normalize"((1 - r) arrow(d)_"spec" + r arrow(v)_"cos") $
+
+Do $arrow(v)_"cos"$ luôn nằm trong bán cầu quanh $arrow(d)_"spec"$, công thức này tạo ra một thùy sáng có bề rộng tăng dần theo $r$. Khi hướng phản xạ gương gần sát đường chân trời, thùy vẫn có thể lấn xuống dưới mặt bề mặt; khi đó vector được phản xạ lại qua $arrow(n)$ trước khi chuẩn hóa. Phép kiểm tra này được viết dưới dạng chọn (select) thay vì rẽ nhánh, vì ở độ nhám lớn nó xảy ra thường xuyên và bộ dự đoán nhánh sẽ đoán sai nhiều.
+
+Vật liệu nhám `Matte` tương ứng với trường hợp $r = 1$ của công thức trên khi tia tới trùng với pháp tuyến ($arrow(d)_"spec" = arrow(n)$), nên thùy sáng thu về đúng phân phối cosine quanh pháp tuyến:
+$ arrow(d)_"new" = arrow(v)_"cos" $
+trong đó $arrow(v)_"cos"$ là một vector đơn vị ngẫu nhiên theo phân phối cosine quanh $arrow(n)$.
 
 == Thuật toán dò tia cơ bản.
 
@@ -1018,7 +1036,7 @@ trong đó $arrow(v)_"rand"$ là một vector đơn vị ngẫu nhiên.
 - Màu của tia sau khi dò.
 
 === Phương pháp
-+ *Khởi tạo:* đặt `final_color = (0, 0, 0)`, `throughput = (1, 1, 1)` và một ngăn xếp môi trường `medium_stack` chứa môi trường toàn cục `global_medium`.
++ *Khởi tạo:* đặt `final_color = (0, 0, 0)`, `throughput = (1, 1, 1)` và một ngăn xếp môi trường `medium_stack` (mảng tĩnh, kích thước tối đa 64) chứa môi trường toàn cục `global_medium`.
 + *Dò tia:* lặp tối đa `max_bounces` lần. Ở mỗi lần dội, thực hiện lần lượt các bước sau:
   + *Kiểm tra giao cắt:* tìm giao điểm gần nhất của `ray` với các vật thể. Nếu tia không cắt vật thể nào thì tính toán ánh sáng nền và thoát khỏi vòng lặp.
 
@@ -1037,15 +1055,15 @@ trong đó $arrow(v)_"rand"$ là một vector đơn vị ngẫu nhiên.
 == Thuật toán kết xuất bằng phương pháp Monte Carlo
 
 === Đầu vào
-- `Camera` gồm vị trí `position`, hệ trục ảnh `(w, u, v)` là các cơ sở ở không gian cục bộ của camera, tiêu cự `focal_length`, khẩu độ `aperture` và độ phơi sáng `exposure`.
+- `Camera` gồm vị trí `position`, hệ trục ảnh `(w, u, v)` là các cơ sở ở không gian cục bộ của camera, tiêu cự `focal_length` và khẩu độ `aperture`.
 - `Scene` chứa cây BVH, vật thể, vật liệu và môi trường toàn cục.
 - Kích thước ảnh `W × H`, tương ứng với `viewport_width` và `viewport_height`.
 - Số mẫu mỗi pixel `samples_per_pixel` (gọi tắt là `spp`) và số lần dội tối đa `max_bounces`.
 - Bộ đệm tích lũy `buffer` và số lượt đã kết xuất `pass`.
 
 === Đầu ra
-- Ảnh `pixels` ở định dạng ABGR 32-bit, mỗi kênh đã được tone map và hiệu chỉnh gamma.
-- `buffer` được cộng dồn để các lượt sau tiếp tục hội tụ; `pass` tăng thêm 1 sau mỗi lần kết xuất.
+- `buffer` HDR được cộng dồn để các lượt sau tiếp tục hội tụ; `pass` tăng thêm 1 sau mỗi lần kết xuất.
+- `RayTracer::render()` không hậu kỳ và không tạo ảnh 8-bit; bước đó chỉ chạy khi hiển thị hoặc lưu ảnh.
 
 === Phương pháp
 Mỗi pixel nhận ánh sáng từ một tập tia liên tục trên diện tích pixel và trên mặt phẳng khẩu độ. Gọi $I_(i j)$ là màu lý tưởng của pixel ở cột $i$, hàng $j$. Giá trị này là một tích phân trên miền mẫu, nhưng chương trình ước lượng bằng Monte Carlo: lấy $N$ mẫu ngẫu nhiên, tạo một tia cho mỗi mẫu, dò màu rồi lấy trung bình:
@@ -1085,18 +1103,20 @@ $ I_P = 1/(P + 1) sum_(p=0)^P I_p $
 Vì mỗi lượt dùng một tập mẫu ngẫu nhiên mới từ cùng một hàm phân phối, ảnh dần hội tụ theo định lý giới hạn trung tâm.
 
 ==== Hậu kỳ
-Gọi `display` là màu trung bình của pixel sau khi chia `buffer` cho số lượt: `display = buffer / (pass + 1)`. Giá trị này vẫn là giá trị màu tuyến tính và có thể lớn hơn 1. Chương trình áp dụng các bước sau theo đúng thứ tự:
+Hậu kỳ không nằm trong `RayTracer::render()`; nó được tách thành hàm `resolvePixels()` và chỉ chạy trên luồng giao diện khi hiển thị hoặc khi lưu ảnh. Nhờ vậy thời gian kết xuất chỉ gồm việc dò tia và cộng dồn `buffer`.
 
-- *Tone mapping:* nén dải động (HDR) về không gian hiển thị chuẩn hóa $[0, 1]$ bằng phương pháp phơi sáng:
+Gọi `display` là màu trung bình của pixel sau khi chia `buffer` cho số lượt: `display = buffer / pass`. Giá trị này vẫn là giá trị màu tuyến tính và có thể lớn hơn 1. Chương trình áp dụng các bước sau theo đúng thứ tự:
 
-$ T(c, e) = min(1 - exp(-e c), 1) $
+- *Tone mapping:* nén dải động (HDR) về không gian hiển thị chuẩn hóa $[0, 1]$. Có hai toán tử chọn được:
+  - *Exposure:* $T(c, e) = min(1 - exp(-e c), 1)$. Giá trị âm hoặc `NaN` được đưa về 0 trước khi tính. Hàm này giữ được chi tiết ở vùng sáng thay vì cắt trắng đột ngột.
+  - *Reinhard:* nhân màu với độ phơi sáng rồi nén bằng $T(c, e) = (e c) / (1 + e c)$. Các kênh âm được kẹp về 0 trước phép chia.
 
-trong đó $c$ là một kênh màu và $e$ là `exposure`. Giá trị âm hoặc `NaN` được đưa về 0 trước khi tính. Hàm này giữ được chi tiết ở vùng sáng thay vì cắt trắng đột ngột.
+trong đó $c$ là một kênh màu và $e$ là `exposure`.
 - *Gamma correction:* mã hóa màu đã tone map sang không gian hiển thị:
 
-$ C_"out" = T(c, e)^(1/2.2) $
+$ C_"out" = T(c, e)^(1/gamma) $
 
-Bước này bù cho việc màn hình hiển thị màu theo đường cong gamma xấp xỉ 2.2. Tone mapping phải được thực hiện trước gamma vì tone mapping là phép phi tuyến trên giá trị màu tuyến tính.
+`gamma` mặc định là 2.2 và có thể chỉnh trong cửa sổ Postprocessing. Bước này bù cho việc màn hình hiển thị màu theo đường cong gamma xấp xỉ 2.2. Tone mapping phải được thực hiện trước gamma vì tone mapping là phép phi tuyến trên giá trị màu tuyến tính.
 - *Lượng tử hóa:* mỗi kênh được kẹp vào $[0, 1]$, nhân với 255, cộng 0.5 rồi lấy phần nguyên để chuyển thành số nguyên 8-bit. `toABGR()` đóng gói ba kênh màu và alpha thành một số nguyên 32-bit (kênh alpha được thêm vào để tương thích với các thư viện đồ họa và được gán bằng 255).
 
 ==== Mã giả
@@ -1106,8 +1126,6 @@ int N = n * n;
 Vec2 world_viewport = Vec2(2.0f * W / H, 2.0f);
 
 for (each pass) {
-    float exposure = camera.getExposure();
-
     for (each pixel (i, j)) {
         Color accumulate = Color(0);
 
@@ -1119,16 +1137,29 @@ for (each pass) {
         }
 
         buffer[i, j] += accumulate / N;
-
-        Color display = buffer[i, j] / (pass + 1);
-        display = gammaCorrect(exposureTonemap(display, exposure), 2.2f);
-        pixels[i, j] = display.toABGR();
     }
 
     pass++;
+}
+
+// chạy trên luồng giao diện, khi hiển thị hoặc lưu ảnh
+void resolvePixels(buffer, pixels, pass, exposure, gamma, tonemap) {
+    for (each pixel (i, j)) {
+        Color display = buffer[i, j] / pass;
+
+        if (tonemap == Tonemap::Reinhard) {
+            display = clampNegative(display * exposure);
+            reihardTonemap(display);
+        } else {
+            exposureTonemap(display, exposure);
+        }
+
+        display = gammaCorrect(display, gamma);
+        pixels[i, j] = display.toABGR();
+    }
 }
 ```
 
 Độ phức tạp của một lượt kết xuất là $O(W H N C)$, với $C$ là chi phí trung bình của một lần `trace()`. Chi phí này phụ thuộc vào `max_bounces`, cấu trúc BVH và số vật thể trong cảnh.
 
-Tóm lại, `RayTracer::render()` kết hợp lấy mẫu phân tầng trên pixel, offset khẩu độ, tích lũy nhiều lượt và hậu kỳ tone mapping/gamma để biến các ước lượng Monte Carlo còn nhiễu thành ảnh hiển thị ổn định. Số mẫu mỗi pixel và số lượt càng lớn thì ảnh càng hội tụ, đổi lại thời gian kết xuất tăng tuyến tính.
+Tóm lại, `RayTracer::render()` kết hợp lấy mẫu phân tầng trên pixel, offset khẩu độ và tích lũy nhiều lượt; hậu kỳ tone mapping/gamma được tách sang `resolvePixels()` ở lúc hiển thị/lưu ảnh để không tính vào thời gian kết xuất. Số mẫu mỗi pixel và số lượt càng lớn thì ảnh càng hội tụ, đổi lại thời gian kết xuất tăng tuyến tính.

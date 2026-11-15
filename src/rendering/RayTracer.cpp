@@ -3,10 +3,10 @@
 #include "Material.h"
 #include "HitInfo.h"
 #include "misc/RNG.h"
-#include "misc/ColorUtils.h"
 
 #include <algorithm>
-#include <stack>
+#include <array>
+#include <cmath>
 
 RayTracer::RayTracer(
     unsigned viewport_width,
@@ -15,7 +15,6 @@ RayTracer::RayTracer(
     viewport_width(viewport_width),
     viewport_height(viewport_height),
     buffer(viewport_width * viewport_height),
-    pixels(viewport_width * viewport_height),
     pass(0){}
 
 const unsigned& RayTracer::getPass() const {
@@ -29,7 +28,6 @@ const unsigned& RayTracer::getViewportWidth() const {
 void RayTracer::setViewportWidth(unsigned vw) {
     viewport_width = vw;
     buffer.resize(viewport_width * viewport_height);
-    pixels.resize(viewport_width * viewport_height);
     reset();
 }
 
@@ -40,7 +38,6 @@ const unsigned& RayTracer::getViewportHeight() const {
 void RayTracer::setViewportHeight(unsigned vh) {
     viewport_height = vh;
     buffer.resize(viewport_width * viewport_height);
-    pixels.resize(viewport_width * viewport_height);
     reset();
 }
 
@@ -62,16 +59,18 @@ void RayTracer::setSamplesPerPixel(unsigned spp) {
     reset();
 }
 
-const std::uint8_t* RayTracer::getData() const {
-    return reinterpret_cast<const std::uint8_t*>(pixels.data());
+const std::vector<Color>& RayTracer::getBuffer() const {
+    return buffer;
 }
 
 const Color RayTracer::trace(Ray ray, const Scene& scene) const {
     Color final_color(0);
     Color throughput(1);
 
-    std::stack<const Medium*> medium_stack;
-    medium_stack.push(&scene.getGlobalMedium());
+    // bounded by max_bounces: each bounce can push at most one medium
+    std::array<const Medium*, 64> medium_stack;
+    size_t medium_stack_size = 1;
+    medium_stack[0] = &scene.getGlobalMedium();
 
     for(unsigned bounces = 0; bounces < max_bounces; bounces++) {
         Hittable* obj;
@@ -87,7 +86,7 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
             break;
         }
 
-        const Medium* current_medium = medium_stack.top();
+        const Medium* current_medium = medium_stack[medium_stack_size - 1];
 
         // attenuate the segment the ray just travelled through,
         // then collect light emitted at the surface it landed on
@@ -113,9 +112,10 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
             Medium* object_medium = rec.material->getMedium();
             if(object_medium) {
                 if(rec.front_face) {
-                    medium_stack.push(object_medium);
-                } else if(medium_stack.size() > 1 && current_medium == object_medium) {
-                    medium_stack.pop();
+                    if(medium_stack_size < medium_stack.size())
+                        medium_stack[medium_stack_size++] = object_medium;
+                } else if(medium_stack_size > 1 && current_medium == object_medium) {
+                    medium_stack_size--;
                 }
             }
         }
@@ -139,7 +139,6 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
 
 void RayTracer::reset() {
     std::fill(buffer.begin(), buffer.end(), Color(0));
-    std::fill(pixels.begin(), pixels.end(), 0);
     pass = 0;
 }
 
@@ -148,10 +147,6 @@ void RayTracer::render(const Camera& camera, const Scene& scene) {
         2.0f * ((float)viewport_width / viewport_height),
         2.0f
     );
-
-    // read once so every pixel of the pass uses the same exposure,
-    // a change only takes effect on the next pass
-    float exposure = camera.getExposure();
 
     int spp_sqrt = std::max(1, int(std::sqrt(samples_per_pixel)));
     int spp = spp_sqrt * spp_sqrt;
@@ -179,10 +174,6 @@ void RayTracer::render(const Camera& camera, const Scene& scene) {
             }
 
             buffer[i + j * viewport_width] += accumulate / spp;
-
-            Color display = buffer[i + j * viewport_width] / (pass + 1);
-            gammaCorrect(exposureTonemap(display, exposure), 2.2f);
-            pixels[i + j * viewport_width] = display.toABGR();
         }
     }
 

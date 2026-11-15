@@ -26,7 +26,7 @@ public:
     virtual AABB getAABB() const;
 
     const Transform& getTransform() const;
-    void setTransform(const Transform t);
+    void setTransform(Transform t);
 
     Material* getMaterial() const;
 };

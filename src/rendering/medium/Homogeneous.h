@@ -7,14 +7,18 @@ private:
     Color sigma;
     float density;
 
+    // sigma * density, cached because transmit() runs once per ray segment
+    Color eff_sigma;
+    void refreshEffSigma();
+
 public:
     Homogeneous(const std::string name, const float ior, const Color sigma, const float density);
 
-    Color& getSigma();
     const Color& getSigma() const;
+    void setSigma(const Color& sigma);
 
-    float& getDensity();
-    const float& getDensity() const;
+    float getDensity() const;
+    void setDensity(float density);
 
     Color transmit(const float distance) const override;
 };

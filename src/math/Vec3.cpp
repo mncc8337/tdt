@@ -113,6 +113,14 @@ Vec3 Vec3::lerp(const Vec3& v, const float t) const {
     return (*this) * (1.0f - t) + v * t;
 }
 
+Vec3 Vec3::inverse() const {
+    return Vec3(
+        1.0f / x,
+        1.0f / y,
+        1.0f / z
+    );
+}
+
 Vec3 Vec3::reflection(const Vec3& n) const {
     return (*this) - n * (*this).dot(n) * 2.0f;
 }
