@@ -518,8 +518,9 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
           ),
           (
             "+ Medium(name, ior)",
-            "+ {virtual} transmit(distance): Color",
-            "+ getIOR(): float&",
+            "+ {virtual} transmit(ray: Ray&, throughput: Color&, distance: const float&): float",
+            "+ getIOR(): const float&",
+            "+ setIOR(ior: float)",
           )
         ), name: <medium>),
 
@@ -551,15 +552,23 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
         node((1, 1.6), class(
           "Homogeneous",
           (
-            "# sigma: Color",
+            "# sigma_a: Color",
+            "# sigma_s: Color",
             "# density: float",
-            "# eff_sigma: Color",
+            "# eff_sigma_a: Color",
+            "# eff_sigma_s: Color",
+            "# eff_sigma_t: Color",
+            "# majorant: float",
+            "# scattering: bool",
           ),
           (
-            "+ Homogeneous(name, ior, sigma, density)",
-            "+ transmit(distance): Color",
-            "+ getSigma(): const Color&",
-            "+ setSigma(sigma: const Color&)",
+            "+ Homogeneous(name, ior, sigma_a, sigma_s, density)",
+            "+ transmit(ray: Ray&, throughput: Color&, distance: const float&): float",
+            "+ transmittance(distance: float): Color",
+            "+ getSigmaA(): const Color&",
+            "+ setSigmaA(sigma_a: const Color&)",
+            "+ getSigmaS(): const Color&",
+            "+ setSigmaS(sigma_s: const Color&)",
             "+ getDensity(): float",
             "+ setDensity(density: float)",
           )
@@ -575,7 +584,11 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
   ], caption: [Vật liệu, bề mặt và môi trường truyền dẫn.]
 )
 
-`Texture` cung cấp dữ liệu bề mặt tại một `HitInfo` bao gồm suy hao bề mặt (màu sắc), độ nhám, pháp tuyến, ...; `ColorTexture` là cài đặt đơn giản nhất, luôn trả về một màu không đổi. `Medium` mô tả môi trường mà tia đang truyền qua. `Medium::transmit(distance)` trả về hệ số suy hao năng lượng trên một đoạn đường dài `distance`; lớp cơ sở trả về màu trắng (không hấp thụ), còn `Homogeneous` cài đặt định luật Beer–Lambert trong môi trường đồng nhất. Mỗi vật liệu `Dielectric` tham chiếu thêm một `Medium` riêng để mô tả môi trường bên trong nó.
+`Texture` cung cấp dữ liệu bề mặt tại một `HitInfo` bao gồm suy hao bề mặt (màu sắc), độ nhám, pháp tuyến, ...; `ColorTexture` là cài đặt đơn giản nhất, luôn trả về một màu không đổi.
+
+`Medium` mô tả môi trường mà tia đang truyền qua. `Medium::transmit(ray, throughput, distance)` cố gắng đưa tia đi hết một đoạn dài `distance`: hàm nhân `throughput` với suy hao của đoạn đường thực tế và trả về quãng đường đã đi. Nếu giá trị trả về nhỏ hơn `distance`, tia đã bị tán xạ thể tích trước khi tới bề mặt; khi đó `ray` đã được dời tới điểm tán xạ và có hướng mới. Lớp cơ sở `Medium` là môi trường trong suốt nên luôn trả về `distance`.
+
+`Homogeneous` mô tả môi trường đồng nhất với hai hệ số trên một đơn vị mật độ: `sigma_a` (hấp thụ) và `sigma_s` (tán xạ). Các giá trị hiệu dụng `eff_sigma_a = sigma_a * density`, `eff_sigma_s = sigma_s * density` và `eff_sigma_t = eff_sigma_a + eff_sigma_s` được cache lại trong `refreshEffSigma()` để tránh tính lại mỗi đoạn tia. Khi `sigma_s = 0`, môi trường chỉ hấp thụ: `transmit()` dùng định luật Beer–Lambert tất định với `eff_sigma_t` và luôn trả về `distance`, nên không tốn mẫu ngẫu nhiên cho thủy tinh trong suốt. Khi `sigma_s > 0`, môi trường tham gia tán xạ: `transmit()` dùng kênh lớn nhất `majorant = max(eff_sigma_t)` làm tốc độ mẫu, lấy quãng đường bay tự do theo phân phối mũ rồi giới hạn bởi `distance`. Nếu tia tán xạ trước bề mặt, trọng số được nhân thêm `eff_sigma_s / majorant`; phần dư màu do các kênh có `eff_sigma_t` nhỏ hơn `majorant` được đưa vào hệ số `exp(-(eff_sigma_t - majorant) * t)`. Nhờ vậy cùng một lớp `Homogeneous` mô tả được cả thủy tinh (trong suốt hoặc có màu) lẫn khói/sương. Mỗi vật liệu `Dielectric` tham chiếu thêm một `Medium` riêng để mô tả môi trường bên trong nó.
 
 #figure(
   block(breakable: false, width: 100%)[
@@ -1040,7 +1053,10 @@ trong đó $arrow(v)_"cos"$ là một vector đơn vị ngẫu nhiên theo phân
 + *Dò tia:* lặp tối đa `max_bounces` lần. Ở mỗi lần dội, thực hiện lần lượt các bước sau:
   + *Kiểm tra giao cắt:* tìm giao điểm gần nhất của `ray` với các vật thể. Nếu tia không cắt vật thể nào thì tính toán ánh sáng nền và thoát khỏi vòng lặp.
 
-  + *Suy hao theo môi trường:* `throughput *= current_medium->transmit(distance)`, với `current_medium` là đỉnh của `medium_stack`. Với môi trường đồng chất `Homogeneous`, hàm `transmit(distance)` chính là định luật Beer–Lambert trên đoạn đường `distance`.
+  + *Tương tác với môi trường:* gọi `transmitted_distance = current_medium->transmit(ray, throughput, rec.distance)`, với `current_medium` là đỉnh của `medium_stack`.
+    - Nếu `transmitted_distance < rec.distance`: tia bị tán xạ thể tích trước khi tới bề mặt. `transmit()` đã dời `ray.origin` tới điểm tán xạ và chọn hướng mới; quay lại đầu vòng lặp để dò tia mới.
+    - Ngược lại: tia tới được bề mặt; `throughput` đã được nhân với suy hao của đoạn đường.
+    - Với `Homogeneous`: nếu `sigma_s = 0`, `transmit()` dùng Beer–Lambert tất định với `sigma_a` và trả về `distance`; nếu `sigma_s > 0`, hàm lấy mẫu quãng đường bay tự do với tốc độ `majorant` và trả về quãng đường thực tế. Trọng số tán xạ `eff_sigma_s / majorant` và phần dư suy hao `exp(-(eff_sigma_t - majorant) * t)` được nhân vào `throughput`; nếu không có va chạm, tia tiếp tục tới bề mặt.
 
   + *Phát xạ:* `final_color += throughput * material->emitted(rec)`. `Material::emitted` mặc định trả về màu đen; `Light` trả về `texture->get(rec) * emission_strength`.
 

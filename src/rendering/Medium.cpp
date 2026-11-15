@@ -12,6 +12,7 @@ void Medium::setIOR(const float t) {
     ior = t;
 }
 
-Color Medium::transmit(const float distance) const {
-    return Color(1);
+float Medium::transmit(Ray& ray, Color& throughput, const float& distance) const {
+    // alway success
+    return distance;
 }

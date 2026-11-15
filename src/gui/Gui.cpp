@@ -202,6 +202,10 @@ void Gui::handlePicking() {
     if(!ImGui::IsMouseClicked(ImGuiMouseButton_Left)) return;
     if(ImGui::GetIO().WantCaptureMouse) return;
 
+
+    // FIXME:
+    // pick wrong object when window size is not proportion with viewport size
+
     ImVec2 mouse = ImGui::GetIO().MousePos;
 
     sf::Vector2u window_size = window.getSize();
@@ -362,10 +366,17 @@ void Gui::drawMediumPropertiesSection(Medium* medium) {
     }
 
     if(Homogeneous* h = dynamic_cast<Homogeneous*>(medium)) {
-        Color sigma = h->getSigma();
-        if(ImGui::ColorEdit3("Absorption", &sigma[0])) {
-            postAction([h, sigma]() {
-                h->setSigma(sigma);
+        Color sigma_a = h->getSigmaA();
+        if(ImGui::ColorEdit3("Absorption (sigma_a)", &sigma_a[0])) {
+            postAction([h, sigma_a]() {
+                h->setSigmaA(sigma_a);
+            });
+        }
+
+        Color sigma_s = h->getSigmaS();
+        if(ImGui::ColorEdit3("Scattering (sigma_s)", &sigma_s[0])) {
+            postAction([h, sigma_s]() {
+                h->setSigmaS(sigma_s);
             });
         }
 
