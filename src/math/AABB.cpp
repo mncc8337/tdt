@@ -1,12 +1,11 @@
 #include "AABB.h"
 #include <algorithm>
 
-AABB::AABB(const Vec3 p): minp(p), maxp(p), centroid(p) {}
+AABB::AABB(const Vec3 p): minp(p), maxp(p) {}
 
 AABB::AABB(const std::initializer_list<Vec3> points) {
     minp = *points.begin();
     maxp = minp;
-    centroid = minp;
 
     for(auto p: points) {
         for(unsigned i = 0; i < 3; i++) {
@@ -14,8 +13,6 @@ AABB::AABB(const std::initializer_list<Vec3> points) {
             maxp[i] = std::max(maxp[i], p[i]);
         }
     }
-
-    centroid = (minp + maxp) / 2;
 }
 
 void AABB::extend(const Vec3& p) {
@@ -23,7 +20,6 @@ void AABB::extend(const Vec3& p) {
         minp[i] = std::min(minp[i], p[i]);
         maxp[i] = std::max(maxp[i], p[i]);
     }
-    centroid = (minp + maxp) / 2;
 }
 
 void AABB::extend(const AABB& aabb) {
@@ -31,7 +27,6 @@ void AABB::extend(const AABB& aabb) {
         minp[i] = std::min(minp[i], aabb.minp[i]);
         maxp[i] = std::max(maxp[i], aabb.maxp[i]);
     }
-    centroid = (minp + maxp) / 2;
 }
 
 AABB AABB::operator +(const Vec3& p) {
@@ -45,11 +40,16 @@ AABB AABB::operator +(const AABB& aabb) {
     return ret;
 }
 
-bool AABB::hit(const Ray& ray, float tmin, float tmax) const {
+bool AABB::hit(
+    const Ray& ray,
+    const Vec3& inv_direction,
+    float tmin,
+    float tmax
+) const {
     for(int a = 0; a < 3; a++) {
-        float invD = 1.0f / ray.direction.axis[a];
-        float t0 = (minp[a] - ray.origin[a]) * invD;
-        float t1 = (maxp[a] - ray.origin[a]) * invD;
+        float invD = inv_direction.axis[a];
+        float t0 = (minp.axis[a] - ray.origin.axis[a]) * invD;
+        float t1 = (maxp.axis[a] - ray.origin.axis[a]) * invD;
 
         if(invD < 0.0f) std::swap(t0, t1);
 

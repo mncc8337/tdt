@@ -11,6 +11,8 @@
 
 #include "Medium.h"
 #include "Texture.h"
+#include "math/Vec3.h"
+#include "misc/ColorUtils.h"
 #include "rendering/Camera.h"
 #include "rendering/RayTracer.h"
 #include "rendering/Scene.h"
@@ -29,8 +31,11 @@ private:
     sf::Sprite sprite;
 
     std::thread render_thread;
-    std::atomic<bool> is_running{false};
-    std::atomic<bool> is_paused{false};
+    // gui state
+    std::atomic<bool> is_gui_running{false};
+    // rendering state
+    std::atomic<bool> is_rendering_paused{false};
+    // raise when the tracer is done rendering a single frame
     std::atomic<bool> is_data_ready{false};
 
     unsigned total_time = 0;
@@ -46,11 +51,24 @@ private:
     std::vector<std::function<void()>> pending_actions;
     std::mutex scene_mutex;
 
-    bool dirty_geometry = false;
+    // raise when the scene geometry is changed
+    bool is_geometry_dirty = false;
 
-    // finished frame, published by the render thread only while
+    // finished HDR frame, published by the render thread only while
     // is_data_ready is false and read by the GUI only while it is true
-    std::vector<std::uint32_t> front_pixels;
+    std::vector<Color> tracer_buffer_copy;
+    unsigned front_pass = 0;
+
+    // resolved 8-bit frame, produced on the GUI thread at display time
+    std::vector<std::uint32_t> display_pixels;
+
+    // post-processing states
+    float exposure = 1.0f;
+    float gamma = 2.2f;
+    Tonemap tonemap = Tonemap::Exposure;
+
+    // raise when the raw frame needs to be post process
+    bool is_display_dirty = false;
 
     Hittable* selected_object = nullptr;
     Material* selected_material = nullptr;
@@ -81,6 +99,7 @@ private:
     void drawTexturesWindow();
     void drawMediumsWindow();
     void drawCameraWindow();
+    void drawPostprocessingWindow();
     void drawTracerWindow();
 
 public:

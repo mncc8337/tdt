@@ -1,5 +1,6 @@
 #include "RNG.h"
 #include <atomic>
+#include <cmath>
 #include <cstdint>
 #include <numbers>
 
@@ -38,12 +39,33 @@ Vec3 RNG::direction() {
     return Vec3(normal(), normal(), normal()).normalized();
 }
 
-Vec3 RNG::directionFast() {
-    Vec3 p;
-    do {
-        p = Vec3(uniform(-1, 1), uniform(-1, 1), uniform(-1, 1));
-    } while (p.length_squared() > 1.0f);
-    return p;
+Vec3 RNG::cosineHemisphere(const Vec3 n) {
+    // branchless orthonormal basis around a unit normal
+    float sign = std::copysign(1.0f, n.z);
+    float a = -1.0f / (sign + n.z);
+    float b = n.x * n.y * a;
+    Vec3 tangent = Vec3(
+        1.0f + sign * n.x * n.x * a,
+        sign * b,
+        -sign * n.x
+    );
+    Vec3 bitangent = Vec3(
+        b,
+        sign + n.y * n.y * a,
+        -n.y
+    );
+
+    // concentric-free cosine sampling: pdf is proportional to cos(theta)
+    float r = std::sqrt(uniform());
+    float phi = 2.0f * std::numbers::pi_v<float> * uniform();
+    float z = std::sqrt(std::fmax(0.0f, 1.0f - r * r));
+    Vec3 local(std::cos(phi) * r, std::sin(phi) * r, z);
+
+    return (
+        tangent * local.x +
+        bitangent * local.y +
+        n * local.z
+    );
 }
 
 Vec2 RNG::pointInCircle(const float radius) {

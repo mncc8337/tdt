@@ -20,7 +20,8 @@ struct RawTriangle {
         const Vec2& uv2
     );
 
-    Vec3 v0, v1, v2;
+    Vec3 origin;
+    Vec3 edge1, edge2;
     Vec2 uv0, uv1, uv2;
 };
 

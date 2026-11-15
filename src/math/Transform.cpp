@@ -1,12 +1,29 @@
 #include "Transform.h"
 #include "misc/floatcmp.h"
 
+void Transform::refreshInverse() {
+    inverse_rotation = rotation.transpose();
+    inverse_scale = size.inverse();
+}
+
+Vec3 Transform::getTranslation() const {
+    return translation;
+}
+
+Vec3 Transform::getRotation() const {
+    return rotation_angles;
+}
+
+Vec3 Transform::getSize() const {
+    return size;
+}
+
 Vec3 Transform::dirApply(const Vec3& v) const {
-    return rotation * (v * scale);
+    return rotation * (v * size);
 }
 
 Vec3 Transform::dirApplyInverse(const Vec3& v) const {
-    return (rotation.transpose() * v) / scale;
+    return (inverse_rotation * v) / size;
 }
 
 Vec3 Transform::pointApply(const Vec3& v) const {
@@ -18,10 +35,10 @@ Vec3 Transform::pointApplyInverse(const Vec3& v) const {
 }
 
 Vec3 Transform::normalApply(const Vec3& n) const {
-    if(fequal(scale.x, scale.y) and fequal(scale.y, scale.z)) {
+    if(fequal(size.x, size.y) and fequal(size.y, size.z)) {
         return rotation * n;
     }
-    return (rotation * (n / scale)).normalized();
+    return (rotation * (n * inverse_scale)).normalized();
 }
 
 Transform& Transform::rotate(const Vec3 angles) {
@@ -29,6 +46,7 @@ Transform& Transform::rotate(const Vec3 angles) {
     rotation = Mat3x3::rotateX(angles.x) *
              Mat3x3::rotateY(angles.y) *
              Mat3x3::rotateZ(angles.z);
+    refreshInverse();
     return *this;
 }
 
@@ -37,7 +55,8 @@ Transform& Transform::move(const Vec3 pos) {
     return *this;
 }
 
-Transform& Transform::size(const Vec3 s) {
-    scale = s;
+Transform& Transform::scale(const Vec3 s) {
+    size = s;
+    refreshInverse();
     return *this;
 }

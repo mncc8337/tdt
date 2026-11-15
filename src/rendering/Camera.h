@@ -7,7 +7,6 @@
 class Camera {
 private:
     float focal_length;
-    float exposure = 1.0f;
     float aperture = 0.02f;
 
     Vec3 position;
@@ -25,9 +24,6 @@ public:
 
     const float& getFocalLength() const;
     void setFocalLength(const float f);
-
-    const float& getExposure() const;
-    void setExposure(const float r);
 
     const float& getAperture() const;
     void setAperture(const float a);

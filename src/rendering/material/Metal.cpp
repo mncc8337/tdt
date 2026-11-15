@@ -12,17 +12,16 @@ ScatterResult Metal::scatter(
     const HitInfo& rec,
     const Medium& origin_medium
 ) const {
-    Vec3 dir = ray.direction.reflection(rec.normal);
+    Vec3 spec = ray.direction.reflection(rec.normal);
 
-    if(!fequal0(roughness)) {
-        Vec3 p = RNG::directionFast();
-        dir += p * roughness;
+    if(fequal0(roughness)) {
+        ray.direction = spec.normalized();
+    } else {
+        Vec3 dir = spec.lerp(RNG::cosineHemisphere(spec), roughness);
+        Vec3 mirrored = dir.reflection(rec.normal);
+        ray.direction = (dir.dot(rec.normal) <= 0.0f ? mirrored : dir) .normalized();
     }
 
-    if(dir.dot(rec.normal) <= 0.0f)
-        dir = dir.reflection(rec.normal);
-
-    ray.direction = dir.normalized();
     ray.origin = rec.hit_point + rec.normal * RAY_ORIGIN_OFFSET;
 
     attenuation = texture->get(rec);

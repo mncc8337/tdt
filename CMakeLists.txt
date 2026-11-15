@@ -70,6 +70,7 @@ target_link_libraries(tdt
     PRIVATE
       SFML::Graphics
       OpenMP::OpenMP_CXX
+      nfd
     PUBLIC
       ImGui-SFML::ImGui-SFML
 )
