@@ -85,5 +85,4 @@ jobs:
         if-no-files-found: error
         path: |
           docs.pdf
-          assets
         retention-days: 14
