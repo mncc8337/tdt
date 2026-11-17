@@ -51,4 +51,39 @@ jobs:
         path: |
           build/bin/tdt-*
           build/bin/Release/tdt-*
+          assets
+        retention-days: 14
+
+  docs:
+    name: Documentation PDF
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+
+    - name: Install Typst
+      run: |
+        curl -fsSL -o /tmp/typst.tar.xz https://github.com/typst/typst/releases/download/v0.15.1/typst-x86_64-unknown-linux-musl.tar.xz
+        tar -xJf /tmp/typst.tar.xz -C /tmp
+        echo "/tmp/typst-x86_64-unknown-linux-musl" >> "$GITHUB_PATH"
+
+    - name: Install CaskaydiaCove NF Font
+      run: |
+        mkdir -p ~/.local/share/fonts/CaskaydiaCoveNF
+        curl -fsSL -o /tmp/CascadiaCode.zip https://github.com/ryanoasis/nerd-fonts/releases/download/v2.3.3/CascadiaCode.zip
+        unzip -o -q /tmp/CascadiaCode.zip -d ~/.local/share/fonts/CaskaydiaCoveNF
+        fc-cache -f ~/.local/share/fonts > /dev/null
+
+    - name: Build PDF
+      run: ./build_docs.sh docs.typ docs.pdf
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: docs-pdf
+        if-no-files-found: error
+        path: |
+          docs.pdf
+          assets
         retention-days: 14
