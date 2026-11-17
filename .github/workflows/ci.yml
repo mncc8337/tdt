@@ -51,4 +51,6 @@ jobs:
         path: |
           build/bin/tdt-*
           build/bin/Release/tdt-*
+          assets
         retention-days: 14
+
