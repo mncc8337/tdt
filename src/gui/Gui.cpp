@@ -3,7 +3,6 @@
 #include <cctype>
 #include <chrono>
 #include <cstring>
-#include <iostream>
 #include <map>
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -924,7 +923,7 @@ void Gui::drawTexturePropertiesSection(Texture* texture) {
         Color tc = ct->getColor();
         if(ImGui::ColorEdit3("Color", &tc[0])) {
             postAction([ct, tc]() {
-                ct->getColor() = tc;
+                ct->setColor(tc);
             });
         }
     } else if(texture) {

@@ -10,6 +10,10 @@ Color ColorTexture::get(const HitInfo& rec) const {
 }
 
 
-Color& ColorTexture::getColor() {
+const Color& ColorTexture::getColor() {
     return color;
+}
+
+void ColorTexture::setColor(const Color c) {
+    color = c;
 }
