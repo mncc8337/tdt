@@ -26,7 +26,7 @@ FetchContent_Declare(sfml
 )
 
 FetchContent_Declare(imgui
-    URL "https://github.com/ocornut/imgui/archive/v1.91.9b.zip"
+    URL "https://github.com/ocornut/imgui/archive/v1.91.9b-docking.zip"
 )
 
 FetchContent_Declare(imgui-sfml

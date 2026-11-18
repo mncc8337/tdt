@@ -4,8 +4,10 @@
 
 #include <atomic>
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <mutex>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -19,28 +21,29 @@
 
 class Gui {
 private:
-    unsigned viewport_width;
-    unsigned viewport_height;
-
     Camera& camera;
     Scene& scene;
     RayTracer tracer;
 
     sf::RenderWindow window;
     sf::Texture texture;
-    sf::Sprite sprite;
 
     std::thread render_thread;
     // gui state
     std::atomic<bool> is_gui_running{false};
     // rendering state
     std::atomic<bool> is_rendering_paused{false};
+    // effective pause is derived every frame from these two sources:
+    // a manual user pause, or the frame limit having been reached
+    bool manual_pause = false;
+    std::atomic<bool> frame_limit_reached{false};
+    std::atomic<bool> limit_frame{true};
+    std::atomic<unsigned> target_frame{100};
     // raise when the tracer is done rendering a single frame
     std::atomic<bool> is_data_ready{false};
 
     unsigned total_time = 0;
     unsigned last_dt = 0;
-    unsigned target_frame = 100;
 
     // the GUI never waits on the scene: edits are queued and applied
     // only when try_lock() can take scene_mutex without blocking. while
@@ -77,30 +80,77 @@ private:
 
     bool uniform_scale = true;
 
+    // screen-space rectangle of the rendered image inside its dock window,
+    // used to map mouse clicks back into render buffer pixels
+    float render_view_x = 0.0f;
+    float render_view_y = 0.0f;
+    float render_view_width = 0.0f;
+    float render_view_height = 0.0f;
+    bool render_view_hovered = false;
+
+    // docking layout is built once, or whenever the user asks for it
+    bool layout_initialized = false;
+    bool layout_checked_saved = false;
+    bool has_saved_layout = false;
+    bool reset_layout_requested = false;
+    // wait for the window manager to settle the startup window size before
+    // choosing the default split, otherwise the side column can end up
+    // sized for the initial window instead of the final one
+    sf::Vector2u last_window_size{0, 0};
+    int stable_window_frames = 0;
+
+    enum class PropertiesTab {
+        Object,
+        Material,
+        Texture,
+        Medium,
+        Camera,
+        Render,
+        PostProcess
+    };
+
+    // set when an outliner selection should reveal the matching tab
+    PropertiesTab requested_properties_tab = PropertiesTab::Object;
+    bool properties_tab_requested = false;
+
     std::string getTypeName(const std::type_info& ti);
 
     void postAction(std::function<void()> action);
     void applyPendingActions();
 
-    void fitSprite();
-
     bool save(const std::filesystem::path &filename);
+    void saveWithDialog();
 
     void renderRoutine();
+    // derive is_rendering_paused from the manual pause and frame limit,
+    // so the render thread state does not depend on any window being drawn
+    void updateRenderState();
+    // must be called while holding scene_mutex
+    void clearDisplayedFrame();
     void handlePicking();
+
+    void drawMainMenuBar();
+    void drawDockspace();
+    void drawRenderWindow();
+    void drawOutlinerWindow();
+    void drawOutlinerObjects();
+    void drawMaterialList();
+    void drawTextureList();
+    void drawMediumList();
+    void drawPropertiesWindow();
+
+    void drawObjectTab();
+    void drawMaterialTab();
+    void drawTextureTab();
+    void drawMediumTab();
+    void drawCameraTab();
+    void drawTracerTab();
+    void drawPostprocessingTab();
 
     void drawObjectPropertiesSection(Hittable* object);
     void drawMaterialPropertiesSection(Material* material);
     void drawTexturePropertiesSection(Texture* texture);
     void drawMediumPropertiesSection(Medium* medium);
-
-    void drawObjectsWindow();
-    void drawMaterialsWindow();
-    void drawTexturesWindow();
-    void drawMediumsWindow();
-    void drawCameraWindow();
-    void drawPostprocessingWindow();
-    void drawTracerWindow();
 
 public:
     Gui(Camera& camera, Scene& scene, unsigned width, unsigned height);
