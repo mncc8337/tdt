@@ -11,5 +11,6 @@ public:
 
     Color get(const HitInfo& rec) const;
 
-    Color& getColor();
+    const Color& getColor();
+    void setColor(const Color c);
 };
