@@ -8,6 +8,7 @@
 #include "rendering/material/Light.h"
 #include "rendering/material/Dielectric.h"
 #include "rendering/material/FineParticle.h"
+#include "rendering/hittable/Sphere.h"
 #include "rendering/hittable/Mesh.h"
 
 #include <string>
@@ -23,7 +24,6 @@ int main() {
     Scene scene;
 
     Medium& vacuum = scene.addMedium<Medium>("vacuum");
-    scene.setGlobalMedium(vacuum);
 
     Medium& glass = scene.addMedium<Homogeneous>(
         "glass",
@@ -40,6 +40,8 @@ int main() {
         Color(0.5f),
         1.0f
     );
+
+    scene.setGlobalMedium(smoke);
 
     Texture& white_tex = scene.addTexture<ColorTexture>(
         "white tex",
@@ -130,12 +132,17 @@ int main() {
         Vec3(0.3f, 1, 0.2f)
     );
 
-    Mesh& tall_box = addMesh("tall box", smoke_mat, cube_model);
+    Mesh& tall_box = addMesh("tall box", white_matte, cube_model);
     Transform tall_box_t = tall_box.getTransform();
     tall_box_t.scale(Vec3(0.25f, 0.6f, 0.25f))
         .rotate(Vec3(0, 0.3f, 0))
         .move(Vec3(0.42f, 0.605f, -0.35f));
     tall_box.setTransform(tall_box_t);
+
+    // Sphere& sphere = static_cast<Sphere&>(scene.addObject<Sphere>("sphere", &smoke_mat, 1.0f));
+    // Transform sphere_t = sphere.getTransform();
+    // sphere_t.move(Vec3(0.42f, 0.505f, -0.35f));
+    // sphere.setTransform(sphere_t);
 
     Mesh& short_box = addMesh("short box", glass_mat, cube_model);
     Transform short_box_t = short_box.getTransform();

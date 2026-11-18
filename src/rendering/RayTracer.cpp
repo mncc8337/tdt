@@ -4,6 +4,7 @@
 #include "HitInfo.h"
 #include "Medium.h"
 #include "misc/RNG.h"
+#include "misc/floatcmp.h"
 
 #include <algorithm>
 #include <array>
@@ -94,8 +95,13 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
 
         const Medium* current_medium = medium_stack[medium_stack_size - 1];
 
-        // try to transmit to the object (distance = rec.distance)
-        float transmitted_distance = current_medium->transmit(ray, throughput, rec.distance);
+        // no surface hit means the ray travels towards the sky, so use an
+        // effectively infinite distance instead of the -1 sentinel from
+        // HitInfo (a negative distance would amplify the throughput)
+        const float travel_distance = rec.didHit() ? rec.distance : FAR_DISTANCE;
+
+        // try to transmit to the object (or to the sky if nothing was hit)
+        float transmitted_distance = current_medium->transmit(ray, throughput, travel_distance);
 
         // FIXME:
         // we could try to transmit through the medium with inf distance first
@@ -103,7 +109,7 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
         // then we could use the transmitted distance as the higher bound for our intersection tests
         // which could reduce the number of tests we need to perform
 
-        if(transmitted_distance < rec.distance) {
+        if(transmitted_distance < travel_distance) {
             // failed to transmit to the object
             // got scattered by the medium in the way
             continue;

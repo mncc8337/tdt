@@ -28,9 +28,9 @@ void Homogeneous::refreshEffSigma() {
         eff_sigma_t.z
     });
     scattering = (
-        eff_sigma_s.x > 0.0f ||
-        eff_sigma_s.y > 0.0f ||
-        eff_sigma_s.z > 0.0f
+        !fequal0(eff_sigma_s.x) ||
+        !fequal0(eff_sigma_s.y) ||
+        !fequal0(eff_sigma_s.z)
     );
 }
 
@@ -80,9 +80,13 @@ float Homogeneous::transmit(Ray& ray, Color& throughput, const float& distance) 
         return distance;
     }
 
-    // sample free-flight distance, clamped to the segment length
+    // sample free-flight distance, clamped to the segment length.
+    // uniform() returns [0, 1): it can produce 0, which would make
+    // log(0) = -inf, and cannot produce 1. So 1 - uniform() is in (0, 1],
+    // which keeps the log argument positive without truncating the
+    // exponential tail and costs the same as using uniform() directly.
     float t = std::min(
-        -std::log(RNG::uniform()) / majorant,
+        -std::log(1.0f - RNG::uniform()) / majorant,
         distance
     );
 
