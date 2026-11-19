@@ -28,6 +28,9 @@ public:
 
     Vec3 normalApply(const Vec3& v) const;
 
+    const Mat3x3& getRotationMatrix() const;
+    const Mat3x3& getInverseRotationMatrix() const;
+
     Transform& rotate(const Vec3 angles);
     Transform& move(const Vec3 pos);
     Transform& scale(const Vec3 s);

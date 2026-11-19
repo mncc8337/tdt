@@ -41,6 +41,13 @@ Vec3 Transform::normalApply(const Vec3& n) const {
     return (rotation * (n * inverse_scale)).normalized();
 }
 
+const Mat3x3& Transform::getRotationMatrix() const {
+    return rotation;
+}
+const Mat3x3& Transform::getInverseRotationMatrix() const {
+    return inverse_rotation;
+}
+
 Transform& Transform::rotate(const Vec3 angles) {
     rotation_angles = angles;
     rotation = Mat3x3::rotateX(angles.x) *

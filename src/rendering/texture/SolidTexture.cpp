@@ -1,4 +1,4 @@
-#include "ColorTexture.h"
+#include "SolidTexture.h"
 #include "HitInfo.h"
 
 ColorTexture::ColorTexture(const std::string name, Color color):

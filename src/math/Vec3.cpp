@@ -141,6 +141,19 @@ std::uint32_t Vec3::toABGR() const {
     return 0xff000000 | channel(x) | (channel(y) << 8) | (channel(z) << 16);
 }
 
+Vec3 Vec3::fromABGR(std::uint32_t abgr) {
+    std::uint8_t r = abgr & 0xff;
+    std::uint8_t g = (abgr >> 8) & 0xff;
+    std::uint8_t b = (abgr >> 16) & 0xff;
+    return Vec3(r, g, b) / 255.0f;
+}
+
+Vec3 Vec3::fromRGBA(std::uint32_t rgba) {
+    std::uint8_t r = (rgba >> 24) & 0xff;
+    std::uint8_t g = (rgba >> 16) & 0xff;
+    std::uint8_t b = (rgba >> 8) & 0xff;
+    return Vec3(r, g, b) / 255.0f;
+}
 
 Vec3& Vec3::clampColor() {
     this->x = std::fmin(std::fmax(this->x, 0.0f), 1.0f);
