@@ -2,6 +2,7 @@
 #include "misc/floatcmp.h"
 #include <cmath>
 #include <algorithm>
+#include <numbers>
 
 Sphere::Sphere(
     const std::string name,
