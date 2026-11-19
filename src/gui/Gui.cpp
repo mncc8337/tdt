@@ -1,9 +1,7 @@
 #include "Gui.h"
 #include <algorithm>
-#include <cctype>
 #include <chrono>
 #include <cstring>
-#include <map>
 
 #if defined(__GNUC__) || defined(__clang__)
 #include <cxxabi.h>
@@ -26,16 +24,6 @@
 #include "rendering/medium/Homogeneous.h"
 #include "rendering/hittable/Mesh.h"
 #include "rendering/hittable/Sphere.h"
-
-static std::string toLower(std::string text) {
-    std::transform(
-        text.begin(),
-        text.end(),
-        text.begin(),
-        [](unsigned char c) { return (char)std::tolower(c); }
-    );
-    return text;
-}
 
 static sf::VideoMode initialWindowSize() {
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
@@ -96,8 +84,13 @@ void Gui::postAction(std::function<void()> action) {
     lock_requested = true;
 }
 
+void Gui::postNonResetAction(std::function<void()> action) {
+    pending_non_reset_actions.push_back(std::move(action));
+    lock_requested = true;
+}
+
 void Gui::applyPendingActions() {
-    if(pending_actions.empty()) return;
+    if(pending_actions.empty() and pending_non_reset_actions.empty()) return;
 
     std::unique_lock<std::mutex> lock(scene_mutex, std::try_to_lock);
 
@@ -105,33 +98,34 @@ void Gui::applyPendingActions() {
     // i.e the scene is not locked
     if(!lock.owns_lock()) return;
 
-    for(const auto& edit : pending_actions) {
+    // apply non reset actions
+    for(const auto& edit : pending_non_reset_actions) {
         edit();
     }
-    pending_actions.clear();
+    pending_non_reset_actions.clear();
 
-    if(is_geometry_dirty) {
-        scene.buildBVH();
-        is_geometry_dirty = false;
+    if(not pending_actions.empty()) {
+        for(const auto& edit : pending_actions) {
+            edit();
+        }
+        pending_actions.clear();
+
+        if(is_geometry_dirty) {
+            scene.buildBVH();
+            is_geometry_dirty = false;
+        }
+
+        // the scene has changed
+        // so reset the accumulated result
+        tracer.reset();
+        // the limit refers to the previously rendered frame count, and the
+        // displayed image belongs to the old scene: drop both
+        frame_limit_reached = false;
+        total_time = 0;
+        last_dt = 0;
     }
 
-    // the scene has changed
-    // so reset the accumulated result
-    tracer.reset();
-    // the limit refers to the previously rendered frame count, and the
-    // displayed image belongs to the old scene: drop both
-    frame_limit_reached = false;
-    clearDisplayedFrame();
-    total_time = 0;
-    last_dt = 0;
-
     lock_requested = false;
-}
-
-void Gui::clearDisplayedFrame() {
-    std::fill(tracer_buffer_copy.begin(), tracer_buffer_copy.end(), Color(0));
-    front_pass = 0;
-    is_data_ready = true;
 }
 
 void Gui::updateRenderState() {
@@ -177,6 +171,90 @@ void Gui::saveWithDialog() {
         printf("Error: %s\n", NFD::GetError());
     }
 }
+
+// selecting hierachy:
+// object - material - texture
+//                   \ medium
+// selecting a node will cascade selecting childs (default to nullptr)
+// selecting a node with the open_menu option will cascading reset parents and siblings
+
+void Gui::setSelectedObject(const Hittable* object, bool open_menu) {
+    selected_object = nullptr;
+    selected_material = nullptr;
+    selected_texture = nullptr;
+    selected_medium = nullptr;
+
+    if(!object)
+        return;
+
+    selected_object = const_cast<Hittable*>(object);
+    if(const Material* mat = selected_object->getMaterial()) {
+        setSelectedMaterial(mat, false);
+    }
+
+    if(open_menu) {
+        requested_properties_tab = PropertiesTab::Object;
+        properties_tab_requested = true;
+    }
+}
+
+void Gui::setSelectedMaterial(const Material* material, bool open_menu) {
+    selected_material = nullptr;
+    selected_texture = nullptr;
+    selected_medium = nullptr;
+
+    if(!material)
+        return;
+
+    selected_material = const_cast<Material*>(material);
+
+    if(const Texture* tex = material->getTexture())
+        setSelectedTexture(tex, false);
+
+    if(const Medium* med = material->getMedium())
+        setSelectedMedium(med, false);
+
+    if(open_menu) {
+        selected_object = nullptr;
+        requested_properties_tab = PropertiesTab::Material;
+        properties_tab_requested = true;
+    }
+}
+
+void Gui::setSelectedTexture(const Texture* texture, bool open_menu) {
+    selected_texture = nullptr;
+
+    if(!texture)
+        return;
+
+    selected_texture = const_cast<Texture*>(texture);
+
+    if(open_menu) {
+        selected_object = nullptr;
+        selected_material = nullptr;
+        selected_medium = nullptr;
+        requested_properties_tab = PropertiesTab::Texture;
+        properties_tab_requested = true;
+    }
+}
+
+void Gui::setSelectedMedium(const Medium* medium, bool open_menu) {
+    selected_medium = nullptr;
+
+    if(!medium)
+        return;
+
+    selected_medium = const_cast<Medium*>(medium);
+
+    if(open_menu) {
+        selected_object = nullptr;
+        selected_material = nullptr;
+        selected_texture = nullptr;
+        requested_properties_tab = PropertiesTab::Medium;
+        properties_tab_requested = true;
+    }
+}
+
 
 void Gui::renderRoutine() {
     sf::Clock delta_clock;
@@ -250,16 +328,16 @@ void Gui::handlePicking() {
     float cv = (my - (float)tex_size.y / 2.0f) / (float)tex_size.y;
 
     Ray ray = camera.getRayAt(Vec2(cu * viewport_w, -cv * viewport_h), false);
-    HitInfo hit = scene.getClosest(ray, selected_object);
-    requested_properties_tab = PropertiesTab::Object;
-    properties_tab_requested = true;
+    Hittable* obj = nullptr;
+    HitInfo hit = scene.getClosest(ray, obj);
+    setSelectedObject(obj);
 }
 
 void Gui::drawMainMenuBar() {
     if(!ImGui::BeginMainMenuBar()) return;
 
     if(ImGui::BeginMenu("File")) {
-        if(ImGui::MenuItem("Save render...")) {
+        if(ImGui::MenuItem("Save render")) {
             saveWithDialog();
         }
         ImGui::EndMenu();
@@ -279,35 +357,10 @@ void Gui::drawDockspace() {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGuiID dockspace_id = ImGui::GetID("MainDockspace.v2");
 
+    static bool layout_initialized = false;
     if(!layout_initialized) {
-        // check for a saved layout only on the first frame, before this
-        // frame's DockSpace call creates an empty node of its own
-        if(!layout_checked_saved) {
-            layout_checked_saved = true;
-            has_saved_layout =
-                ImGui::DockBuilderGetNode(dockspace_id) != nullptr;
-            if(has_saved_layout) {
-                layout_initialized = true;
-            }
-        }
-
-        if(!layout_initialized) {
-            // wait until the window size stops changing before building
-            // the default layout, so its proportions match the window the
-            // user will actually be looking at
-            sf::Vector2u current_size = window.getSize();
-            if(current_size == last_window_size) {
-                stable_window_frames++;
-            } else {
-                last_window_size = current_size;
-                stable_window_frames = 0;
-            }
-
-            if(stable_window_frames >= 2) {
-                layout_initialized = true;
-                reset_layout_requested = true;
-            }
-        }
+        layout_initialized = true;
+        reset_layout_requested = true;
     }
 
     if(reset_layout_requested) {
@@ -317,7 +370,6 @@ void Gui::drawDockspace() {
         ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);
         ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->WorkSize);
 
-        // one large render view on the left, one column on the right
         ImGuiID render_node = dockspace_id;
         ImGuiID side_node = ImGui::DockBuilderSplitNode(
             render_node,
@@ -327,19 +379,17 @@ void Gui::drawDockspace() {
             &render_node
         );
 
-        // the right column holds the outliner on top and the properties
-        // tabs below, mirroring the usual blender arrangement
-        ImGuiID outliner_node = side_node;
+        ImGuiID listing_node = side_node;
         ImGuiID properties_node = ImGui::DockBuilderSplitNode(
             side_node,
             ImGuiDir_Down,
             0.68f,
             nullptr,
-            &outliner_node
+            &listing_node
         );
 
         ImGui::DockBuilderDockWindow("Render", render_node);
-        ImGui::DockBuilderDockWindow("Outliner", outliner_node);
+        ImGui::DockBuilderDockWindow("Listing", listing_node);
         ImGui::DockBuilderDockWindow("Properties", properties_node);
 
         ImGui::DockBuilderFinish(dockspace_id);
@@ -411,101 +461,34 @@ void Gui::drawRenderWindow() {
     ImGui::End();
 }
 
-void Gui::drawOutlinerWindow() {
-    ImGui::Begin("Outliner");
+void Gui::drawListingWindow() {
+    ImGui::Begin("Listing");
 
-    if(ImGui::BeginTabBar("##outliner_tabs", ImGuiTabBarFlags_Reorderable)) {
+    if(ImGui::BeginTabBar("##listing_tabs", ImGuiTabBarFlags_Reorderable)) {
         if(ImGui::BeginTabItem("Objects")) {
-            drawOutlinerObjects();
+            drawListing("object", scene.getObjects(), selected_object,
+                [this](const Hittable* object, bool open_menu) { setSelectedObject(object, open_menu); });
             ImGui::EndTabItem();
         }
         if(ImGui::BeginTabItem("Materials")) {
-            drawMaterialList();
+            drawListing("material", scene.getMaterials(), selected_material,
+                [this](const Material* material, bool open_menu) { setSelectedMaterial(material, open_menu); });
             ImGui::EndTabItem();
         }
         if(ImGui::BeginTabItem("Textures")) {
-            drawTextureList();
+            drawListing("texture", scene.getTextures(), selected_texture,
+                [this](const Texture* texture, bool open_menu) { setSelectedTexture(texture, open_menu); });
             ImGui::EndTabItem();
         }
         if(ImGui::BeginTabItem("Mediums")) {
-            drawMediumList();
+            drawListing("medium", scene.getMediums(), selected_medium,
+                [this](const Medium* medium, bool open_menu) { setSelectedMedium(medium, open_menu); });
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
     }
 
     ImGui::End();
-}
-
-void Gui::drawOutlinerObjects() {
-    static char filter[128] = "";
-    ImGui::SetNextItemWidth(-ImGui::GetFrameHeight());
-    ImGui::InputTextWithHint("##filter", "Filter objects...", filter, sizeof(filter));
-    ImGui::SameLine();
-    if(ImGui::Button("X", ImVec2(ImGui::GetFrameHeight(), 0.0f))) {
-        filter[0] = '\0';
-    }
-
-    ImGui::Separator();
-
-    const auto& objects = scene.getObjects();
-
-    if(filter[0] == '\0') {
-        ImGui::TextDisabled("%zu object(s)", objects.size());
-    }
-
-    std::string needle = toLower(filter);
-    auto matches = [&needle](const std::string& name) {
-        return needle.empty() || toLower(name).find(needle) != std::string::npos;
-    };
-
-    // group by concrete type so the outliner reads like a scene tree
-    std::map<std::string, std::vector<std::pair<size_t, Hittable*>>> groups;
-    for(size_t i = 0; i < objects.size(); i++) {
-        Hittable& object = *objects[i];
-        groups[getTypeName(typeid(object))].push_back({i, &object});
-    }
-
-    for(auto& [type, entries] : groups) {
-        bool has_visible_entry = false;
-        for(const auto& [index, object] : entries) {
-            if(matches(object->getName())) {
-                has_visible_entry = true;
-                break;
-            }
-        }
-        if(!has_visible_entry) continue;
-
-        ImGui::PushID(type.c_str());
-        char type_label[160];
-        std::snprintf(type_label, sizeof(type_label), "%s (%zu)", type.c_str(), entries.size());
-
-        if(ImGui::TreeNodeEx(
-            type_label,
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth
-        )) {
-            for(const auto& [index, object] : entries) {
-                if(!matches(object->getName())) continue;
-
-                char label[160];
-                std::snprintf(
-                    label,
-                    sizeof(label),
-                    "[%zu] %s",
-                    index,
-                    object->getName().c_str()
-                );
-
-                if(ImGui::Selectable(label, object == selected_object)) {
-                    selected_object = object;
-                    requested_properties_tab = PropertiesTab::Object;
-                    properties_tab_requested = true;
-                }
-            }
-            ImGui::TreePop();
-        }
-        ImGui::PopID();
-    }
 }
 
 void Gui::drawPropertiesWindow() {
@@ -532,19 +515,19 @@ void Gui::drawPropertiesWindow() {
             ImGui::EndTabItem();
         }
         if(ImGui::BeginTabItem("Object", nullptr, tab_flags(PropertiesTab::Object))) {
-            drawObjectTab();
+            drawObjectProperties(selected_object);
             ImGui::EndTabItem();
         }
         if(ImGui::BeginTabItem("Material", nullptr, tab_flags(PropertiesTab::Material))) {
-            drawMaterialTab();
+            drawMaterialProperties(selected_material);
             ImGui::EndTabItem();
         }
         if(ImGui::BeginTabItem("Texture", nullptr, tab_flags(PropertiesTab::Texture))) {
-            drawTextureTab();
+            drawTextureProperties(selected_texture);
             ImGui::EndTabItem();
         }
         if(ImGui::BeginTabItem("Medium", nullptr, tab_flags(PropertiesTab::Medium))) {
-            drawMediumTab();
+            drawMediumProperties(selected_medium);
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -553,91 +536,6 @@ void Gui::drawPropertiesWindow() {
     }
 
     ImGui::End();
-}
-
-void Gui::drawObjectTab() {
-    drawObjectPropertiesSection(selected_object);
-}
-
-void Gui::drawMaterialList() {
-    const auto& materials = scene.getMaterials();
-
-    ImVec2 list_size(
-        ImGui::GetContentRegionAvail().x,
-        6.0f * ImGui::GetTextLineHeightWithSpacing()
-    );
-    if(ImGui::BeginListBox("##materials", list_size)) {
-        for(size_t i = 0; i < materials.size(); i++) {
-            Material& mat = *materials[i];
-            char label[160];
-            std::snprintf(label, sizeof(label), "[%zu] %s", i, mat.getName().c_str());
-
-            if(ImGui::Selectable(label, &mat == selected_material)) {
-                selected_material = &mat;
-                requested_properties_tab = PropertiesTab::Material;
-                properties_tab_requested = true;
-            }
-        }
-        ImGui::EndListBox();
-    }
-}
-
-void Gui::drawMaterialTab() {
-    drawMaterialPropertiesSection(selected_material);
-}
-
-void Gui::drawTextureList() {
-    const auto& textures = scene.getTextures();
-
-    ImVec2 list_size(
-        ImGui::GetContentRegionAvail().x,
-        6.0f * ImGui::GetTextLineHeightWithSpacing()
-    );
-    if(ImGui::BeginListBox("##textures", list_size)) {
-        for(size_t i = 0; i < textures.size(); i++) {
-            Texture& tex = *textures[i];
-            char label[160];
-            std::snprintf(label, sizeof(label), "[%zu] %s", i, tex.getName().c_str());
-
-            if(ImGui::Selectable(label, &tex == selected_texture)) {
-                selected_texture = &tex;
-                requested_properties_tab = PropertiesTab::Texture;
-                properties_tab_requested = true;
-            }
-        }
-        ImGui::EndListBox();
-    }
-}
-
-void Gui::drawTextureTab() {
-    drawTexturePropertiesSection(selected_texture);
-}
-
-void Gui::drawMediumList() {
-    const auto& mediums = scene.getMediums();
-
-    ImVec2 list_size(
-        ImGui::GetContentRegionAvail().x,
-        6.0f * ImGui::GetTextLineHeightWithSpacing()
-    );
-    if(ImGui::BeginListBox("##mediums", list_size)) {
-        for(size_t i = 0; i < mediums.size(); i++) {
-            Medium& med = *mediums[i];
-            char label[160];
-            std::snprintf(label, sizeof(label), "[%zu] %s", i, med.getName().c_str());
-
-            if(ImGui::Selectable(label, &med == selected_medium)) {
-                selected_medium = &med;
-                requested_properties_tab = PropertiesTab::Medium;
-                properties_tab_requested = true;
-            }
-        }
-        ImGui::EndListBox();
-    }
-}
-
-void Gui::drawMediumTab() {
-    drawMediumPropertiesSection(selected_medium);
 }
 
 void Gui::drawCameraTab() {
@@ -709,12 +607,7 @@ void Gui::drawTracerTab() {
     // pass has finished and released the scene mutex
     if(ImGui::Button("Reset")) {
         postAction([this]() {
-            tracer.reset();
-            // a reset drops the frame limit along with the accumulated
-            // result, and clears the published frame so the reset is
-            // visible even while the renderer is paused
-            frame_limit_reached = false;
-            clearDisplayedFrame();
+            // just post an empty action and the gui loop will do the rest
         });
     }
 
@@ -763,7 +656,7 @@ void Gui::drawTracerTab() {
     ImGui::Separator();
 
     int viewport_width = tracer.getViewportWidth();
-    if(ImGui::DragInt("Viewport width", &viewport_width, 10, 10, 1920)) {
+    if(ImGui::InputInt("Viewport width", &viewport_width, 10, 100)) {
         postAction([this, viewport_width]() {
             tracer.setViewportWidth(viewport_width);
             sf::Vector2u new_tex_size = sf::Vector2u(
@@ -779,7 +672,7 @@ void Gui::drawTracerTab() {
     }
 
     int viewport_height = tracer.getViewportHeight();
-    if(ImGui::DragInt("Viewport height", &viewport_height, 10, 10, 1080)) {
+    if(ImGui::InputInt("Viewport height", &viewport_height, 10, 100)) {
         postAction([this, viewport_height]() {
             tracer.setViewportHeight(viewport_height);
             sf::Vector2u new_tex_size = sf::Vector2u(
@@ -795,21 +688,21 @@ void Gui::drawTracerTab() {
     }
 
     int max_bounces = tracer.getMaxBounces();
-    if(ImGui::DragInt("Max bounces", &max_bounces, 1, 1, 100)) {
-        postAction([this, max_bounces]() {
+    if(ImGui::InputInt("Max bounces", &max_bounces, 1, 10)) {
+        postNonResetAction([this, max_bounces]() {
             tracer.setMaxBounces(max_bounces);
         });
     }
 
     int samples_per_pixel = tracer.getSamplesPerPixel();
-    if(ImGui::DragInt("Samples per pixel", &samples_per_pixel, 1, 1, 128)) {
-        postAction([this, samples_per_pixel]() {
+    if(ImGui::InputInt("Samples per pixel", &samples_per_pixel, 1, 4)) {
+        postNonResetAction([this, samples_per_pixel]() {
             tracer.setSamplesPerPixel(samples_per_pixel);
         });
     }
 }
 
-void Gui::drawObjectPropertiesSection(Hittable* object) {
+void Gui::drawObjectProperties(Hittable* object) {
     if(object == nullptr) {
         ImGui::TextDisabled("No object selected.");
         return;
@@ -829,32 +722,37 @@ void Gui::drawObjectPropertiesSection(Hittable* object) {
     Transform edited = object->getTransform();
     ImGui::SeparatorText("Transform");
 
-    bool changed = false;
+    bool transform_changed = false;
 
     Vec3 e_translation = edited.getTranslation();
-    changed |= ImGui::DragFloat3("Translation", &e_translation.x, 0.05f);
-    edited.move(e_translation);
+    if(ImGui::DragFloat3("Translation", &e_translation.x, 0.05f)) {
+        edited.move(e_translation);
+        transform_changed = true;
+    }
 
+    Vec3 e_angles = edited.getRotation();
+    if(ImGui::DragFloat3("Rotation (rad)", &e_angles[0], 0.01f)) {
+        edited.rotate(e_angles);
+        transform_changed = true;
+    }
+
+    static bool uniform_scale = true;
     Vec3 e_scale = edited.getSize();
     ImGui::Checkbox("Uniform scale", &uniform_scale);
     if(uniform_scale) {
         float s = (e_scale.x + e_scale.y + e_scale.z) / 3.0f;
         if(ImGui::DragFloat("Scale", &s, 0.01f)) {
             edited.scale(s);
-            changed = true;
+            transform_changed = true;
         }
     } else {
-        changed |= ImGui::DragFloat3("Scale", &e_scale.x, 0.01f);
-        edited.scale(e_scale);
+        if(ImGui::DragFloat3("Scale", &e_scale.x, 0.01f)){
+            edited.scale(e_scale);
+            transform_changed = true;
+        }
     }
 
-    Vec3 e_angles = edited.getRotation();
-    if(ImGui::DragFloat3("Rotation (rad)", &e_angles[0], 0.01f)) {
-        edited.rotate(e_angles);
-        changed = true;
-    }
-
-    if(changed) {
+    if(transform_changed) {
         postAction([this, obj = object, edited]() {
             obj->setTransform(edited);
             is_geometry_dirty = true;
@@ -872,7 +770,7 @@ void Gui::drawObjectPropertiesSection(Hittable* object) {
     }
 }
 
-void Gui::drawMaterialPropertiesSection(Material* material) {
+void Gui::drawMaterialProperties(Material* material) {
     if(material == nullptr) {
         ImGui::TextDisabled("No material selected.");
         return;
@@ -904,7 +802,7 @@ void Gui::drawMaterialPropertiesSection(Material* material) {
     }
 }
 
-void Gui::drawTexturePropertiesSection(Texture* texture) {
+void Gui::drawTextureProperties(Texture* texture) {
     if(texture == nullptr) {
         ImGui::TextDisabled("No texture selected.");
         return;
@@ -924,7 +822,7 @@ void Gui::drawTexturePropertiesSection(Texture* texture) {
     }
 }
 
-void Gui::drawMediumPropertiesSection(Medium* medium) {
+void Gui::drawMediumProperties(Medium* medium) {
     if(medium == nullptr) {
         ImGui::TextDisabled("No medium selected.");
         return;
@@ -966,6 +864,9 @@ void Gui::drawMediumPropertiesSection(Medium* medium) {
     }
 }
 
+void Gui::cameraControl() {
+}
+
 void Gui::run() {
     is_gui_running = true;
     render_thread = std::thread(&Gui::renderRoutine, this);
@@ -985,6 +886,8 @@ void Gui::run() {
         if(!window.isOpen()) {
             break;
         }
+
+        cameraControl();
 
         if(is_display_dirty || is_data_ready) {
             // apply post processing to the copied buffer
@@ -1015,7 +918,7 @@ void Gui::run() {
         drawDockspace();
 
         drawRenderWindow();
-        drawOutlinerWindow();
+        drawListingWindow();
         drawPropertiesWindow();
 
         // picking uses the image rectangle recorded while drawing the
