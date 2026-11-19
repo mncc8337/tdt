@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -52,6 +53,7 @@ private:
     // get their chance instead of racing it every time.
     std::atomic<bool> lock_requested{false};
     std::vector<std::function<void()>> pending_actions;
+    std::vector<std::function<void()>> pending_non_reset_actions;
     std::mutex scene_mutex;
 
     // raise when the scene geometry is changed
@@ -78,8 +80,6 @@ private:
     Texture* selected_texture = nullptr;
     Medium* selected_medium = nullptr;
 
-    bool uniform_scale = true;
-
     // screen-space rectangle of the rendered image inside its dock window,
     // used to map mouse clicks back into render buffer pixels
     float render_view_x = 0.0f;
@@ -88,16 +88,7 @@ private:
     float render_view_height = 0.0f;
     bool render_view_hovered = false;
 
-    // docking layout is built once, or whenever the user asks for it
-    bool layout_initialized = false;
-    bool layout_checked_saved = false;
-    bool has_saved_layout = false;
     bool reset_layout_requested = false;
-    // wait for the window manager to settle the startup window size before
-    // choosing the default split, otherwise the side column can end up
-    // sized for the initial window instead of the final one
-    sf::Vector2u last_window_size{0, 0};
-    int stable_window_frames = 0;
 
     enum class PropertiesTab {
         Object,
@@ -116,45 +107,52 @@ private:
     std::string getTypeName(const std::type_info& ti);
 
     void postAction(std::function<void()> action);
+    void postNonResetAction(std::function<void()> action);
     void applyPendingActions();
 
     bool save(const std::filesystem::path &filename);
     void saveWithDialog();
 
+    void setSelectedObject(const Hittable* object, bool open_menu = true);
+    void setSelectedMaterial(const Material* material, bool open_menu = true);
+    void setSelectedTexture(const Texture* texture, bool open_menu = true);
+    void setSelectedMedium(const Medium* medium, bool open_menu = true);
+
     void renderRoutine();
     // derive is_rendering_paused from the manual pause and frame limit,
     // so the render thread state does not depend on any window being drawn
     void updateRenderState();
-    // must be called while holding scene_mutex
-    void clearDisplayedFrame();
     void handlePicking();
+    void cameraControl();
+
+    template <typename ItemType, typename Setter>
+    void drawListing(
+        const std::string& calling,
+        const std::vector<std::unique_ptr<ItemType>>& items,
+        const ItemType* selected_item,
+        Setter&& selectedItemSetter
+    );
+
+    void drawObjectProperties(Hittable* object);
+    void drawMaterialProperties(Material* material);
+    void drawTextureProperties(Texture* texture);
+    void drawMediumProperties(Medium* medium);
 
     void drawMainMenuBar();
     void drawDockspace();
     void drawRenderWindow();
-    void drawOutlinerWindow();
-    void drawOutlinerObjects();
-    void drawMaterialList();
-    void drawTextureList();
-    void drawMediumList();
+    void drawListingWindow();
     void drawPropertiesWindow();
 
-    void drawObjectTab();
-    void drawMaterialTab();
-    void drawTextureTab();
-    void drawMediumTab();
     void drawCameraTab();
     void drawTracerTab();
     void drawPostprocessingTab();
 
-    void drawObjectPropertiesSection(Hittable* object);
-    void drawMaterialPropertiesSection(Material* material);
-    void drawTexturePropertiesSection(Texture* texture);
-    void drawMediumPropertiesSection(Medium* medium);
-
 public:
-    Gui(Camera& camera, Scene& scene, unsigned width, unsigned height);
+    Gui(Camera& camera, Scene& scene, unsigned width = 300, unsigned height = 300);
     ~Gui();
 
     void run();
 };
+
+#include "Gui.inl"

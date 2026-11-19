@@ -49,7 +49,7 @@ const unsigned& RayTracer::getMaxBounces() const {
 
 void RayTracer::setMaxBounces(unsigned mb) {
     max_bounces = mb;
-    reset();
+    // reset();
 }
 
 const unsigned& RayTracer::getSamplesPerPixel() const {
@@ -58,7 +58,7 @@ const unsigned& RayTracer::getSamplesPerPixel() const {
 
 void RayTracer::setSamplesPerPixel(unsigned spp) {
     samples_per_pixel = spp;
-    reset();
+    // reset();
 }
 
 const std::vector<Color>& RayTracer::getBuffer() const {
