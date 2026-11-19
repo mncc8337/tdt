@@ -621,7 +621,7 @@ void Gui::drawTracerTab() {
 
     unsigned pass = tracer.getPass();
     if(pass > 0) {
-        ImGui::Text("frame #%d, dt %d ms", pass - 1, last_dt);
+        ImGui::Text("frame #%d, dt %d ms", pass, last_dt);
         ImGui::Text("total: %dms", total_time);
         ImGui::Text("mean dt: %.3fms", (float)total_time / pass);
     } else {
@@ -636,10 +636,16 @@ void Gui::drawTracerTab() {
         ImGui::TextDisabled("Renderer paused: frame limit reached.");
     }
 
+    bool lazy = tracer.getLazy();
+    if(ImGui::Checkbox("Lazy rendering", &lazy)) {
+        postNonResetAction([this, lazy]() {
+            tracer.setLazy(lazy);
+        });
+    }
+
     bool limit = limit_frame.load();
     if(ImGui::Checkbox("Limit frame count", &limit)) {
         limit_frame = limit;
-        // the limit no longer applies, so release any pause it caused
         frame_limit_reached = false;
     }
 
@@ -648,7 +654,6 @@ void Gui::drawTracerTab() {
         if(ImGui::InputInt("Target frame", &tf, 10, 100)) {
             if(tf < 0) tf = 0;
             target_frame = (unsigned)tf;
-            // a new target allows rendering to continue
             frame_limit_reached = false;
         }
     }
@@ -716,8 +721,6 @@ void Gui::drawObjectProperties(Hittable* object) {
     // of the props to display if the edits still havent been applied
     // which may causes some visual bugs
     // it is kinda hard to to fix, and the bug is minor anyways
-
-    // FIXME: add object ptr to the change queue merging logics
 
     Transform edited = object->getTransform();
     ImGui::SeparatorText("Transform");
@@ -929,8 +932,6 @@ void Gui::run() {
         // try_lock only, never blocking
         applyPendingActions();
 
-        // the renderer must never stay paused just because a tab is not
-        // visible: the pause state is derived every frame instead
         updateRenderState();
 
         window.clear(sf::Color(24, 24, 24));
