@@ -67,8 +67,8 @@ HitInfo Mesh::hit(const Ray& ray) const {
         current_closest.normal = current_closest.front_face ? outward_normal : -outward_normal;
 
         float w = 1.0f - u - v;
-        current_closest.uv.x = w * tri.uv0.x + u * tri.uv1.x + v * tri.uv2.x;
-        current_closest.uv.y = w * tri.uv0.y + u * tri.uv1.y + v * tri.uv2.y;
+        current_closest.tri_uv.x = w * tri.uv0.x + u * tri.uv1.x + v * tri.uv2.x;
+        current_closest.tri_uv.y = w * tri.uv0.y + u * tri.uv1.y + v * tri.uv2.y;
     };
 
     HitInfo closest_hit;
@@ -83,6 +83,7 @@ HitInfo Mesh::hit(const Ray& ray) const {
 
     if(closest_hit.didHit()) {
         closest_hit.material = material;
+        closest_hit.hittable = this;
         // convert to world space coordinates
         closest_hit.hit_point = transform.pointApply(closest_hit.hit_point);
         // project the hp-origin vector to the ray direction
@@ -91,4 +92,10 @@ HitInfo Mesh::hit(const Ray& ray) const {
         closest_hit.normal = transform.normalApply(closest_hit.normal);
     }
     return closest_hit;
+}
+
+// no one should ever use this
+// and should use rec.tri_uv directly unless rec.tri_uv.x < 0
+Vec2 Mesh::getUV(const HitInfo& rec) const {
+    return rec.tri_uv;
 }

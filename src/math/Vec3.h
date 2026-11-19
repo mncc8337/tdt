@@ -54,6 +54,8 @@ struct Vec3 {
     Vec3 refraction(const Vec3& n, const float etai_over_etat);
 
     std::uint32_t toABGR() const;
+    static Vec3 fromABGR(std::uint32_t abgr);
+    static Vec3 fromRGBA(std::uint32_t RGBA);
     Vec3& clampColor();
 };
 

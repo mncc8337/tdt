@@ -1,6 +1,7 @@
 #include "Sphere.h"
 #include "misc/floatcmp.h"
 #include <cmath>
+#include <algorithm>
 
 Sphere::Sphere(
     const std::string name,
@@ -43,7 +44,7 @@ HitInfo Sphere::hit(const Ray& ray) const {
     // prevent back-intersection
     // also ignore the case when the ray lies too close to the sphere surface
     // to avoid nan handling complications
-    if (dist < EPSILON) {
+    if(dist < EPSILON) {
         return info;
     }
 
@@ -52,19 +53,32 @@ HitInfo Sphere::hit(const Ray& ray) const {
 
     Vec3 outward_normal = (info.hit_point /* - center */) / radius;
     info.front_face = local_ray.direction.dot(outward_normal) < 0;
-
     if(info.front_face)
         info.normal = outward_normal;
     else
         info.normal = -outward_normal;
 
     info.material = material;
+    info.hittable = this;
     info.hit_point = transform.pointApply(info.hit_point);
     info.distance = (info.hit_point - ray.origin).dot(ray.direction);
     info.normal = transform.normalApply(info.normal);
 
     return info;
 }
+
+Vec2 Sphere::getUV(const HitInfo& rec) const {
+    const float pi = std::numbers::pi_v<float>;
+    Vec3 n_prime = transform.getInverseRotationMatrix() * rec.normal;
+    float theta = std::acos(std::clamp(n_prime.y, -1.0f, 1.0f)); // clamping to prevent nan
+    float phi = std::atan2(n_prime.z, n_prime.x) + pi;
+
+    return Vec2(
+        phi / (2.0f * pi),
+        theta / pi
+    );
+}
+
 
 AABB Sphere::calculateLocalAABB() const {
     return AABB({/* center + */ Vec3(radius), /* center */ - Vec3(radius)});

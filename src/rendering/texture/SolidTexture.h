@@ -9,7 +9,7 @@ private:
 public:
     ColorTexture(const std::string name, Color color);
 
-    Color get(const HitInfo& rec) const;
+    Color get(const HitInfo& rec) const override;
 
     const Color& getColor();
     void setColor(const Color c);

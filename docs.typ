@@ -177,7 +177,7 @@ Sau khi hoàn thành quá trình tính toán cho tất cả pixel, chương trì
 *Dữ liệu đầu vào (Input)* là cảnh được khai báo trong mã nguồn (main.cpp); sau khi chạy, các thuộc tính của camera, vật thể, vật liệu, kết cấu và môi trường có thể chỉnh trực tiếp qua giao diện. Cảnh gồm:
 - Camera: Thiết lập vị trí đặt mắt, điểm nhìn (look-at), tiêu cự (khoảng cách tới mặt phẳng ảnh, quyết định góc nhìn), khẩu độ (cho hiệu ứng Depth of Field xấp xỉ), độ mạnh khử răng cưa và độ phơi sáng. Vector hướng lên được cố định là (0, 1, 0).
 - Vật thể & Hình học: Các nguyên hàm hình học cơ bản (mặt cầu) và các mô hình lưới đa giác (triangle mesh) phức tạp được nạp trực tiếp từ các tệp định dạng chuẩn .obj.
-- Vật liệu & Kết cấu (Materials & Textures): Khởi tạo các thông số quang học cho 4 nhóm vật liệu (Matte, Metal, Dielectric, Light), màu sắc đơn sắc (ColorTexture). Chưa hỗ trợ bản đồ kết cấu từ ảnh.
+- Vật liệu & Kết cấu (Materials & Textures): Khởi tạo các thông số quang học cho 4 nhóm vật liệu (Matte, Metal, Dielectric, Light), màu sắc đơn sắc (SolidTexture). Chưa hỗ trợ bản đồ kết cấu từ ảnh.
 - Môi trường (Environment): Định nghĩa môi trường đồng nhất có chiết suất và tính chất hấp thụ ánh sáng (định luật Beer–Lambert); chưa mô phỏng tán xạ thể tích.
 Cảnh mẫu chuẩn (Cornell Box Scene): Thiết lập không gian buồng Cornell kinh điển gồm có sàn nhà, trần nhà, ba bức tường (trái, phải, sau), một nguồn sáng dạng diện tích (area light) đặt trên trần, và hai khối hộp đặt bên trong phòng với các góc xoay khác nhau để kiểm tra hiện tượng khử bóng đổ và phản xạ khuếch tán (color bleeding).
 
@@ -1284,12 +1284,12 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
         ), name: <medium>),
 
         node((-2, 1.6), class(
-          "ColorTexture",
+          "SolidTexture",
           (
             "# color: Color",
           ),
           (
-            "+ ColorTexture(name, color)",
+            "+ SolidTexture(name, color)",
             "+ get(rec): Color",
             "+ getColor(): Color&",
           )
@@ -1343,7 +1343,7 @@ Hệ thống hình học được xây dựng quanh lớp cơ sở trừu tượ
   ], caption: [Vật liệu, bề mặt và môi trường truyền dẫn.]
 )
 
-`Texture` cung cấp dữ liệu bề mặt tại một `HitInfo` bao gồm suy hao bề mặt (màu sắc), độ nhám, pháp tuyến, ...; `ColorTexture` là cài đặt đơn giản nhất, luôn trả về một màu không đổi.
+`Texture` cung cấp dữ liệu bề mặt tại một `HitInfo` bao gồm suy hao bề mặt (màu sắc), độ nhám, pháp tuyến, ...; `SolidTexture` là cài đặt đơn giản nhất, luôn trả về một màu không đổi.
 
 `Medium` mô tả môi trường mà tia đang truyền qua. `Medium::transmit(ray, throughput, distance)` cố gắng đưa tia đi hết một đoạn dài `distance`: hàm nhân `throughput` với suy hao của đoạn đường thực tế và trả về quãng đường đã đi. Nếu giá trị trả về nhỏ hơn `distance`, tia đã bị tán xạ thể tích trước khi tới bề mặt; khi đó `ray` đã được dời tới điểm tán xạ và có hướng mới. Lớp cơ sở `Medium` là môi trường trong suốt nên luôn trả về `distance`.
 

@@ -18,6 +18,8 @@ public:
 
     HitInfo hit(const Ray& ray) const override;
 
+    Vec2 getUV(const HitInfo& rec) const override;
+
     const float& getRadius() const;
     void setRadius(const float r);
 };

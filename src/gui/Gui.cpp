@@ -16,7 +16,7 @@
 
 #include "misc/ColorUtils.h"
 #include "rendering/Texture.h"
-#include "rendering/texture/ColorTexture.h"
+#include "rendering/texture/SolidTexture.h"
 #include "rendering/Material.h"
 #include "rendering/material/Metal.h"
 #include "rendering/material/Matte.h"
@@ -251,6 +251,8 @@ void Gui::handlePicking() {
 
     Ray ray = camera.getRayAt(Vec2(cu * viewport_w, -cv * viewport_h), false);
     HitInfo hit = scene.getClosest(ray, selected_object);
+    requested_properties_tab = PropertiesTab::Object;
+    properties_tab_requested = true;
 }
 
 void Gui::drawMainMenuBar() {
@@ -464,54 +466,45 @@ void Gui::drawOutlinerObjects() {
         groups[getTypeName(typeid(object))].push_back({i, &object});
     }
 
-    char scene_label[64];
-    std::snprintf(scene_label, sizeof(scene_label), "Scene (%zu)", objects.size());
-
-    if(ImGui::TreeNodeEx(
-        scene_label,
-        ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth
-    )) {
-        for(auto& [type, entries] : groups) {
-            bool has_visible_entry = false;
-            for(const auto& [index, object] : entries) {
-                if(matches(object->getName())) {
-                    has_visible_entry = true;
-                    break;
-                }
+    for(auto& [type, entries] : groups) {
+        bool has_visible_entry = false;
+        for(const auto& [index, object] : entries) {
+            if(matches(object->getName())) {
+                has_visible_entry = true;
+                break;
             }
-            if(!has_visible_entry) continue;
-
-            ImGui::PushID(type.c_str());
-            char type_label[160];
-            std::snprintf(type_label, sizeof(type_label), "%s (%zu)", type.c_str(), entries.size());
-
-            if(ImGui::TreeNodeEx(
-                type_label,
-                ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth
-            )) {
-                for(const auto& [index, object] : entries) {
-                    if(!matches(object->getName())) continue;
-
-                    char label[160];
-                    std::snprintf(
-                        label,
-                        sizeof(label),
-                        "[%zu] %s",
-                        index,
-                        object->getName().c_str()
-                    );
-
-                    if(ImGui::Selectable(label, object == selected_object)) {
-                        selected_object = object;
-                        requested_properties_tab = PropertiesTab::Object;
-                        properties_tab_requested = true;
-                    }
-                }
-                ImGui::TreePop();
-            }
-            ImGui::PopID();
         }
-        ImGui::TreePop();
+        if(!has_visible_entry) continue;
+
+        ImGui::PushID(type.c_str());
+        char type_label[160];
+        std::snprintf(type_label, sizeof(type_label), "%s (%zu)", type.c_str(), entries.size());
+
+        if(ImGui::TreeNodeEx(
+            type_label,
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth
+        )) {
+            for(const auto& [index, object] : entries) {
+                if(!matches(object->getName())) continue;
+
+                char label[160];
+                std::snprintf(
+                    label,
+                    sizeof(label),
+                    "[%zu] %s",
+                    index,
+                    object->getName().c_str()
+                );
+
+                if(ImGui::Selectable(label, object == selected_object)) {
+                    selected_object = object;
+                    requested_properties_tab = PropertiesTab::Object;
+                    properties_tab_requested = true;
+                }
+            }
+            ImGui::TreePop();
+        }
+        ImGui::PopID();
     }
 }
 
