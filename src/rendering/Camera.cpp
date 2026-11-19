@@ -15,8 +15,8 @@ Camera::Camera(
 
 void Camera::computeOrientation() {
     w = (lookat - position).normalized();
-    u = Vec3(0, 1, 0).cross(w);
-    v = w.cross(u);
+    u = (Vec3(0, 1, 0).cross(w)).normalized();
+    v = w.cross(u).normalized();
 }
 
 Ray Camera::getRayAt(Vec2 uv, bool jitter) const {
@@ -24,12 +24,10 @@ Ray Camera::getRayAt(Vec2 uv, bool jitter) const {
     ray.origin = position;
     ray.direction = focal_length * w + uv.x * u + uv.y * v;
 
-    if(jitter) {
-        if(!fequal0(aperture)) {
-            // offset ray origin for defocus effect
-            Vec2 defocus_jitter = RNG::pointInCircle(aperture / 2.0f);
-            ray.origin += u * defocus_jitter.x + v * defocus_jitter.y;
-        }
+    if(jitter and !fequal0(aperture)) {
+        // offset ray origin for defocus effect
+        Vec2 defocus_jitter = RNG::pointInCircle(aperture / 2.0f);
+        ray.origin += u * defocus_jitter.x + v * defocus_jitter.y;
     }
 
     ray.direction.normalize();
@@ -61,7 +59,7 @@ void Camera::setPosition(const Vec3 new_pos) {
 }
 
 const Vec3& Camera::getDirection() const {
-    return lookat;
+    return w;
 }
 
 void Camera::setDirection(const Vec3 new_dir) {
@@ -69,7 +67,15 @@ void Camera::setDirection(const Vec3 new_dir) {
     computeOrientation();
 }
 
-void Camera::lookAt(const Vec3& v) {
-    lookat = v;
+const Vec3& Camera::getRight() const {
+    return u;
+}
+
+const Vec3& Camera::getUp() const {
+    return v;
+}
+
+void Camera::lookAt(const Vec3& l) {
+    lookat = l;
     computeOrientation();
 }

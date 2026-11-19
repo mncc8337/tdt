@@ -123,7 +123,7 @@ private:
     // so the render thread state does not depend on any window being drawn
     void updateRenderState();
     void handlePicking();
-    void cameraControl();
+    void cameraControls();
 
     template <typename ItemType, typename Setter>
     void drawListing(
