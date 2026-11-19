@@ -1,6 +1,6 @@
 #include "Gui.h"
-#include <algorithm>
-#include <chrono>
+#include <SFML/Window/Keyboard.hpp>
+#include <SFML/Window/Mouse.hpp>
 #include <cstring>
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -867,7 +867,89 @@ void Gui::drawMediumProperties(Medium* medium) {
     }
 }
 
-void Gui::cameraControl() {
+void Gui::cameraControls() {
+    // SFML does not have a dedicated mouse capture state
+    // that stop the mouse in a specific (mostly in the middle)
+    // of the screen like most game engines in wayland
+    // so we have to implement our own
+    // initial_mouse is used to see if the mouse is captured or not
+    // if yes then it holds the position that the mouse was captured
+    // else (-1, -1)
+
+    static sf::Vector2i initial_mouse(-1, -1);
+    // clock to measure delays between inputs
+    static sf::Clock delta_clock;
+
+    // only allows camera controls when holding rmb
+    if(!render_view_hovered or !sf::Mouse::isButtonPressed(sf::Mouse::Button::Right)) {
+        // release mouse
+        initial_mouse.x = -1;
+        initial_mouse.y = -1;
+        window.setMouseCursorVisible(true);
+        return;
+    }
+
+    if(initial_mouse.x == -1 and initial_mouse.y == -1) {
+        // capture mouse
+        initial_mouse = sf::Mouse::getPosition();
+        window.setMouseCursorVisible(false);
+    }
+
+    const float SPEED = 1.0f;
+    const float MOUSE_SENS = 3.34f;
+
+    sf::Time dt = delta_clock.restart();
+    float delta_sec = dt.asSeconds();
+
+    sf::Vector2i current_mouse = sf::Mouse::getPosition();
+    // mouse must be captured again after polling the position
+    // giving it the biggest time window for the mouse to move a significant ammount
+    sf::Mouse::setPosition(initial_mouse);
+
+    float delta_length = SPEED * delta_sec;
+
+    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::LShift))
+        delta_length *= 1.7f;
+
+    const auto& getDirection = [](sf::Keyboard::Scancode p, sf::Keyboard::Scancode n) {
+        return sf::Keyboard::isKeyPressed(p) - sf::Keyboard::isKeyPressed(n);
+    };
+
+    const int trans_fwd = getDirection(
+        sf::Keyboard::Scancode::W,
+        sf::Keyboard::Scancode::S
+    );
+    const int trans_right = getDirection(
+        sf::Keyboard::Scancode::D,
+        sf::Keyboard::Scancode::A
+    );
+    const int trans_up = getDirection(
+        sf::Keyboard::Scancode::E,
+        sf::Keyboard::Scancode::Q
+    );
+
+    if(trans_fwd or trans_right or trans_up) {
+        Vec3 translation = camera.getDirection() * trans_fwd;
+        translation += camera.getRight() * trans_right;
+        translation += Vec3(0, 1, 0) * trans_up;
+        translation.normalize();
+        translation *= delta_length;
+        postAction([this, translation]() {
+            camera.setPosition(camera.getPosition() + translation);
+        });
+    }
+
+    sf::Vector2i delta_mouse = current_mouse - initial_mouse;
+    if(delta_mouse.lengthSquared() > 0) {
+        Vec3 dir = camera.getRight() * delta_mouse.x - camera.getUp() * delta_mouse.y;
+        dir = dir.normalized() * MOUSE_SENS * delta_sec;
+        dir = (camera.getDirection() + dir).normalized();
+        if(std::abs(dir.dot(Vec3(0, 1, 0))) < 0.88f) {
+            postAction([this, dir]{
+                camera.setDirection(dir);
+            });
+        }
+    }
 }
 
 void Gui::run() {
@@ -889,8 +971,6 @@ void Gui::run() {
         if(!window.isOpen()) {
             break;
         }
-
-        cameraControl();
 
         if(is_display_dirty || is_data_ready) {
             // apply post processing to the copied buffer
@@ -927,6 +1007,9 @@ void Gui::run() {
         // picking uses the image rectangle recorded while drawing the
         // render window, so it must run after the windows are submitted
         handlePicking();
+
+        // must be after handlePicking() to get the render_view_hovered flag
+        cameraControls();
 
         // apply whatever the widgets changed this frame
         // try_lock only, never blocking

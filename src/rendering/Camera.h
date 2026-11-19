@@ -34,7 +34,10 @@ public:
     const Vec3& getDirection() const;
     void setDirection(const Vec3 new_dir);
 
-    void lookAt(const Vec3& v);
+    const Vec3& getRight() const;
+    const Vec3& getUp() const;
+
+    void lookAt(const Vec3& l);
 
     Ray getRayAt(Vec2 uv, bool jitter = true) const;
 };
