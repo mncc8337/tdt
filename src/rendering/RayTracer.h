@@ -15,6 +15,8 @@ private:
 
     unsigned pass = 0;
 
+    bool lazy = false;
+
     std::vector<Color> buffer;
 
 public:
@@ -36,6 +38,9 @@ public:
 
     const unsigned& getSamplesPerPixel() const;
     void setSamplesPerPixel(unsigned spp);
+
+    const bool& getLazy() const;
+    const void setLazy(bool l);
 
     const std::vector<Color>& getBuffer() const;
 

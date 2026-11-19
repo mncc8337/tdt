@@ -61,6 +61,13 @@ void RayTracer::setSamplesPerPixel(unsigned spp) {
     // reset();
 }
 
+const bool& RayTracer::getLazy() const {
+    return lazy;
+}
+const void RayTracer::setLazy(bool l) {
+    lazy = l;
+}
+
 const std::vector<Color>& RayTracer::getBuffer() const {
     return buffer;
 }
@@ -178,6 +185,13 @@ void RayTracer::render(const Camera& camera, const Scene& scene) {
     #pragma omp parallel for schedule(dynamic, 1)
     for(int j = 0; j < viewport_height; j++) {
         for(int i = 0; i < viewport_width; i++) {
+            // render in checkerboard pattern
+            // reduce render time in half
+            // only sensible when modifying the scene
+            // through the gui since it gives the least visual delay
+            if(lazy and ((i + j * viewport_width + pass + j % 2) % 2))
+                continue;
+
             Color accumulate = Color(0);
 
             // stratified sampling
@@ -195,6 +209,11 @@ void RayTracer::render(const Camera& camera, const Scene& scene) {
                     accumulate += trace(camera.getRayAt(uv * world_viewport), scene);
                 }
             }
+
+            // since only half of the frame is rendered
+            // we double the ammount the other half collected to compensate
+            if(lazy)
+                accumulate *= 2.0f;
 
             buffer[i + j * viewport_width] += accumulate / spp;
         }
