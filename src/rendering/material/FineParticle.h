@@ -15,4 +15,6 @@ public:
         const HitInfo& rec,
         const Medium& origin_medium
     ) const override;
+
+    Color emitted(const HitInfo& rec) const override;
 };

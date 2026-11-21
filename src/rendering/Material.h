@@ -32,9 +32,9 @@ public:
         Color& attenuation,
         const HitInfo& rec,
         const Medium& origin_medium
-    ) const;
+    ) const = 0;
 
-    virtual Color emitted(const HitInfo& rec) const;
+    virtual Color emitted(const HitInfo& rec) const = 0;
 
     Texture* getTexture() const;
     Medium* getMedium() const;

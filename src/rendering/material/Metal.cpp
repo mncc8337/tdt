@@ -29,6 +29,10 @@ ScatterResult Metal::scatter(
     return ScatterResult::Scattered;
 }
 
+Color Metal::emitted(const HitInfo& rec) const {
+    return Color(0, 0, 0);
+}
+
 float& Metal::getRoughness() {
     return roughness;
 }

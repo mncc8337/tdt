@@ -10,6 +10,15 @@ Light::Light(
     emission_strength(emission_strength),
     color(color) {}
 
+ScatterResult Light::scatter(
+    Ray& ray,
+    Color& attenuation,
+    const HitInfo& rec,
+    const Medium& origin_medium
+) const {
+    return ScatterResult::Terminated;
+}
+
 Color Light::emitted(const HitInfo& rec) const {
     return texture->get(rec) * emission_strength;
 }

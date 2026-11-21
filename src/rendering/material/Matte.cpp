@@ -18,3 +18,7 @@ ScatterResult Matte::scatter(
 
     return ScatterResult::Scattered;
 }
+
+Color Matte::emitted(const HitInfo& rec) const {
+    return Color(0, 0, 0);
+}

@@ -44,3 +44,7 @@ ScatterResult Dielectric::scatter(
     ray.origin = rec.hit_point - rec.normal * RAY_ORIGIN_OFFSET;
     return ScatterResult::Refracted;
 }
+
+Color Dielectric::emitted(const HitInfo& rec) const {
+    return Color(0, 0, 0);
+}

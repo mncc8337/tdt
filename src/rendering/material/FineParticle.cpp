@@ -18,3 +18,7 @@ ScatterResult FineParticle::scatter(
     // consider rename it to VolumeChanged, it also fits the result of a transparent material
     return ScatterResult::Refracted;
 }
+
+Color FineParticle::emitted(const HitInfo& rec) const {
+    return Color(0);
+}
