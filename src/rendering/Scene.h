@@ -7,6 +7,7 @@
 #include "Material.h"
 #include "Texture.h"
 #include "Medium.h"
+#include "LightSample.h"
 #include "dsa/BVHNode.h"
 
 #define SCENE_BVH_THRESHOLD 2
@@ -17,6 +18,8 @@ private:
     std::vector<std::unique_ptr<Material>> materials;
     std::vector<std::unique_ptr<Texture>> textures;
     std::vector<std::unique_ptr<Medium>> mediums;
+
+    std::vector<Hittable*> lights;
 
     Medium* global_medium = nullptr;
 
@@ -45,6 +48,9 @@ public:
     const std::vector<std::unique_ptr<Medium>>& getMediums() const;
 
     HitInfo getClosest(const Ray& ray, Hittable*& obj) const;
+
+    // Sample one light uniformly and return its contribution data.
+    bool sampleLight(const Vec3& from, LightSample& sample) const;
 
     void buildBVH();
 

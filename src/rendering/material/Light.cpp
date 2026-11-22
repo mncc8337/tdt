@@ -23,6 +23,10 @@ Color Light::emitted(const HitInfo& rec) const {
     return texture->get(rec) * emission_strength;
 }
 
+bool Light::isEmissive() const {
+    return true;
+}
+
 float& Light::getEmissionStrength() {
     return emission_strength;
 }

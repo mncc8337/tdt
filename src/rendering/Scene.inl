@@ -6,6 +6,11 @@ Hittable& Scene::addObject(Args&&... args) {
     auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
     auto& ref = *ptr;
     objects.push_back(std::move(ptr));
+
+    if(ref.getMaterial()->isEmissive()) {
+        lights.push_back(&ref);
+    }
+
     return ref;
 }
 

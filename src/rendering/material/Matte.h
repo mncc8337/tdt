@@ -14,5 +14,9 @@ public:
     ) const override;
 
     Color emitted(const HitInfo& rec) const override;
+
+    bool hasNEE() const override;
+
+    Color BRDF(const Vec3& in_dir, const Vec3& out_dir, const HitInfo& rec) const override;
 };
 

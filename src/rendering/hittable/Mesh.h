@@ -19,4 +19,5 @@ public:
 
     HitInfo hit(const Ray& ray) const override;
     Vec2 getUV(const HitInfo& rec) const override;
+    bool samplePoint(const Vec3& viewpoint, SurfaceSample& sample) const override;
 };

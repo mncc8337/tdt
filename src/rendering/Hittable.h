@@ -7,6 +7,12 @@
 #include "misc/NamedElement.h"
 #include <memory>
 
+struct SurfaceSample {
+    Vec3 sample;
+    Vec3 sample_normal;
+    float area_pdf = 0.0f;
+};
+
 class Hittable: public NamedElement {
 protected:
     Transform transform;
@@ -17,13 +23,14 @@ protected:
 
     virtual AABB calculateLocalAABB() const = 0;
     AABB calculateGlobalAABB() const;
-    void recomputeAABB();
+    void refreshAABB();
 
 public:
     Hittable(const std::string name, Material* material);
     virtual ~Hittable();
     virtual HitInfo hit(const Ray& ray) const = 0;
     virtual Vec2 getUV(const HitInfo& rec) const = 0;
+    virtual bool samplePoint(const Vec3& viewpoint, SurfaceSample& sample) const = 0;
     virtual AABB getAABB() const;
 
     const Transform& getTransform() const;

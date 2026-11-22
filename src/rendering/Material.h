@@ -36,6 +36,11 @@ public:
 
     virtual Color emitted(const HitInfo& rec) const = 0;
 
+    virtual bool isEmissive() const;
+
+    virtual bool hasNEE() const;
+    virtual Color BRDF(const Vec3& in_dir, const Vec3& out_dir, const HitInfo& rec) const;
+
     Texture* getTexture() const;
     Medium* getMedium() const;
 };

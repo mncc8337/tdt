@@ -18,6 +18,8 @@ public:
 
     Color emitted(const HitInfo& rec) const override;
 
+    bool isEmissive() const override;
+
     ScatterResult scatter(
         Ray& ray,
         Color& attenuation,

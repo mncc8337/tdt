@@ -166,8 +166,8 @@ void demo(Scene& scene, Camera& camera) {
         "smoke",
         1.0f,
         Color(0.02f),
-        Color(2.0f),
-        1.0f
+        Color(0.03f),
+        0.8f
     ));
 
     Medium& vacuum = scene.addMedium<Medium>("vacuum");
@@ -325,7 +325,7 @@ void demo(Scene& scene, Camera& camera) {
         plane_model,
         Vec3(0, 2.3f, -0.2f),
         Vec3(pi, 0, 0),
-        Vec3(1.0f, 1, 0.7f)
+        Vec3(0.4f, 1, 0.4f)
     );
 
     addMesh(
@@ -375,7 +375,7 @@ void demo(Scene& scene, Camera& camera) {
 
     addSphere("glass sphere", glass_mat, 0.34f, Vec3(-0.72f, 0.34f, -0.05f));
 
-    addSphere("earth", earth_mat, 0.24f, Vec3(-0.62f, 0.24f, 0.70f));
+    addSphere("earth", earth_mat, 0.12f, Vec3(-0.62f, 1.06f, 0.70f));
 
     addSphere("sun", sun_mat, 0.26f, Vec3(-1.15f, 1.55f, -0.90f));
 }

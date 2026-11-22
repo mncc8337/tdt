@@ -2,11 +2,12 @@
 #include "dsa/BVHNode.h"
 #include "floatcmp.h"
 #include "misc/meshloader.h"
+#include "misc/RNG.h"
 
 Mesh::Mesh(const std::string name, Material* material, const std::vector<RawTriangle>& src_tris):
     Hittable(name, material), tris(src_tris) {
     if(tris.empty()) return;
-    recomputeAABB();
+    refreshAABB();
     bvh_root = std::make_unique<BVHNode>(tris, 0, tris.size());
 }
 
@@ -14,7 +15,7 @@ Mesh::Mesh(const std::string name, Material* material, std::string filename):
     Hittable(name, material) {
     loadMeshFrom(filename, tris);
     if(tris.empty()) return;
-    recomputeAABB();
+    refreshAABB();
     bvh_root = std::make_unique<BVHNode>(tris, 0, tris.size());
 }
 
@@ -98,4 +99,58 @@ HitInfo Mesh::hit(const Ray& ray) const {
 // and should use rec.tri_uv directly unless rec.tri_uv.x < 0
 Vec2 Mesh::getUV(const HitInfo& rec) const {
     return rec.tri_uv;
+}
+
+bool Mesh::samplePoint(const Vec3&, SurfaceSample& sample) const {
+    if(tris.empty())
+        return false;
+
+    // World-space vertices of a triangle. Using world space makes the area
+    // correct even when the mesh has a non-uniform scale.
+    auto worldTriangle = [&](const RawTriangle& tri, Vec3& a, Vec3& b, Vec3& c) {
+        a = transform.pointApply(tri.origin);
+        b = transform.pointApply(tri.origin + tri.edge1);
+        c = transform.pointApply(tri.origin + tri.edge2);
+    };
+
+    float total_area = 0.0f;
+    for(const RawTriangle& tri : tris) {
+        Vec3 a, b, c;
+        worldTriangle(tri, a, b, c);
+        total_area += 0.5f * (b - a).cross(c - a).length();
+    }
+    if(total_area <= EPSILON)
+        return false;
+
+    // Pick a triangle proportional to its area.
+    float pick = RNG::uniform() * total_area;
+    float accum = 0.0f;
+
+    Vec3 a, b, c;
+    worldTriangle(tris.back(), a, b, c);
+
+    for(const RawTriangle& tri : tris) {
+        Vec3 ta, tb, tc;
+        worldTriangle(tri, ta, tb, tc);
+        accum += 0.5f * (tb - ta).cross(tc - ta).length();
+        if(pick <= accum) {
+            a = ta;
+            b = tb;
+            c = tc;
+            break;
+        }
+    }
+
+    // Uniform barycentric sample inside the chosen triangle.
+    float u = RNG::uniform();
+    float v = RNG::uniform();
+    if(u + v > 1.0f) {
+        u = 1.0f - u;
+        v = 1.0f - v;
+    }
+
+    sample.sample = a + (b - a) * u + (c - a) * v;
+    sample.sample_normal = (b - a).cross(c - a).normalized();
+    sample.area_pdf = 1.0f / total_area;
+    return true;
 }

@@ -75,6 +75,7 @@ const std::vector<Color>& RayTracer::getBuffer() const {
 const Color RayTracer::trace(Ray ray, const Scene& scene) const {
     Color final_color(0);
     Color throughput(1);
+    bool is_last_bounce_direct_sampled = false;
 
     // use std::array instead of std::stack to reduce dynamic allocation
     // bounded by max_bounces: each bounce can push at most one medium
@@ -119,6 +120,9 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
         if(transmitted_distance < travel_distance) {
             // failed to transmit to the object
             // got scattered by the medium in the way
+            // direct light sampling is only implemented for surfaces
+            // so allow emission to be collected on the next light hit.
+            is_last_bounce_direct_sampled = false;
             continue;
         }
 
@@ -134,11 +138,56 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
             break;
         }
 
-        final_color += throughput * rec.material->emitted(rec);
+        // skip samples that are handled by direct sampling
+        // avoid double counting
+        if(!is_last_bounce_direct_sampled) {
+            final_color += throughput * rec.material->emitted(rec);
+        }
 
-        // surface scattering weight.
+        // next-event estimation for diffuse surfaces
+        // this is the simplest form: one light sample, conditional pdf
+        bool nee_succeed = false;
+        if(rec.material->hasNEE()) {
+            LightSample light_sample;
+            if(scene.sampleLight(rec.hit_point, light_sample)) {
+                nee_succeed = true;
+                float cos_theta = std::max(
+                    0.0f,
+                    rec.normal.dot(light_sample.light_direction)
+                );
+
+                if(cos_theta > 0.0f && light_sample.pdf > 0.0f) {
+                    Ray shadow_ray(
+                        rec.hit_point + rec.normal * RAY_ORIGIN_OFFSET,
+                        light_sample.light_direction
+                    );
+                    Hittable* blocker = nullptr;
+                    HitInfo shadow_hit = scene.getClosest(shadow_ray, blocker);
+
+                    bool visible = (
+                        !shadow_hit.didHit()
+                        or (
+                            blocker == light_sample.light
+                            // change epsilon to 1e-4
+                            // the main distance difference is going to be RAY_ORIGIN_OFFSET = 1e-5
+                            // (since the sample ray is offseted by that ammount from the object surface)
+                            // so epsilon need to be larger than that for the comparison to be true
+                            // builtin EPSILON = 1e-6 is smaller than that, so replaced
+                            and fequal(shadow_hit.distance, light_sample.light_distance, 1e-4)
+                        )
+                    );
+
+                    if(visible) {
+                        Color att = rec.material->BRDF(light_sample.light_direction, -ray.direction, rec);
+                        att *= light_sample.emitted_radiance * cos_theta / light_sample.pdf;
+                        final_color += throughput * att;
+                    }
+                }
+            }
+        }
+
+        // surface scattering weight
         // materials that absorb at the surface overwrite it
-        // a dielectric leaves it as is, absorption along the path is the medium's job
         Color surface_attenuation(1);
         ScatterResult result = rec.material->scatter(
             ray,
@@ -151,7 +200,9 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
             break;
         } else if(result == ScatterResult::Scattered) {
             throughput *= surface_attenuation;
+            is_last_bounce_direct_sampled = nee_succeed;
         } else if(result == ScatterResult::Refracted) {
+            is_last_bounce_direct_sampled = false;
             Medium* object_medium = rec.material->getMedium();
             if(object_medium) {
                 if(rec.front_face) {

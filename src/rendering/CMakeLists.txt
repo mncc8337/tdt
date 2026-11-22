@@ -1,5 +1,6 @@
 target_sources(tdt
   PRIVATE 
+    LightSample.cpp
     Scene.cpp
     Camera.cpp
     HitInfo.cpp

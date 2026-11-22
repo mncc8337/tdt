@@ -15,7 +15,19 @@ ScatterResult Material::scatter(
 }
 
 Color Material::emitted(const HitInfo& rec) const {
-    return Color(0, 0, 0);
+    return Color(0);
+}
+
+bool Material::isEmissive() const {
+    return false;
+}
+
+bool Material::hasNEE() const {
+    return false;
+}
+
+Color Material::BRDF(const Vec3& in_dir, const Vec3& out_dir, const HitInfo& rec) const {
+    return Vec3(0.0f);
 }
 
 Texture* Material::getTexture() const {

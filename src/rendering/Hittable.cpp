@@ -31,7 +31,7 @@ AABB Hittable::calculateGlobalAABB() const {
     return transformed;
 }
 
-void Hittable::recomputeAABB() {
+void Hittable::refreshAABB() {
     local_aabb = calculateLocalAABB();
     global_aabb = calculateGlobalAABB();
 }
