@@ -25,19 +25,32 @@ private:
 
     std::unique_ptr<BVHNode> bvh_root = nullptr;
 
+    template <typename Item>
+    Item* findOwned(const std::vector<std::unique_ptr<Item>>& items, const Item* item);
+
+    template <typename Item, typename Predicate>
+    void eraseOwnedIf(std::vector<std::unique_ptr<Item>>& items, Predicate&& predicate);
+
 public:
     template <typename T, typename... Args>
-    Hittable& addObject(Args&&... args);
-    // void remove_object(Hittable* object);
+    const Hittable& addObject(Args&&... args);
+    void remove_object(const Hittable* object);
+    void set_transform(const Hittable* object, const Transform& transform);
+    void set_material(const Hittable* object, const Material* material);
 
     template <typename T, typename... Args>
     Material& addMaterial(Args&&... args);
+    void remove_material(const Material* material);
+    void set_texture(const Material* material, const Texture* texture);
+    void set_medium(const Material* material, const Medium* medium);
 
     template <typename T, typename... Args>
     Texture& addTexture(Args&&... args);
+    void remove_texture(const Texture* texture);
 
     template <typename T, typename... Args>
     Medium& addMedium(Args&&... args);
+    void remove_medium(const Medium* medium);
 
     const Medium& getGlobalMedium() const;
     void setGlobalMedium(Medium& medium);

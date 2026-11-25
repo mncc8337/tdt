@@ -5,28 +5,25 @@
 #include <algorithm>
 #include <numbers>
 
-Sphere::Sphere(
-    const std::string name,
-    Material* material,
-    float radius
-):
-    Hittable(name, material),
-    radius(radius) {
+Sphere::Sphere( const std::string name, Material* material): Hittable(name, material) {
     refreshAABB();
 }
 
 HitInfo Sphere::hit(const Ray& ray) const {
+    // the sphere's center and radius used is implied Vec3(0) and 1.0f
+    // and should be set via the transform prop
+
     HitInfo info;
 
     Ray local_ray = ray;
     local_ray.origin = transform.pointApplyInverse(local_ray.origin);
     local_ray.direction = transform.dirApplyInverse(local_ray.direction);
 
-    Vec3 offset_origin = local_ray.origin  /* - center */;
+    Vec3 offset_origin = local_ray.origin /* - center */;
 
     float a = local_ray.direction.length_squared();
     float half_b = -offset_origin.dot(local_ray.direction);
-    float c = offset_origin.length_squared() - radius * radius;
+    float c = offset_origin.length_squared() - 1.0f /* * radius * radius */;
 
     float discriminant = half_b * half_b - a * c;
 
@@ -53,7 +50,8 @@ HitInfo Sphere::hit(const Ray& ray) const {
     info.distance = dist;
     info.hit_point = local_ray.point(dist);
 
-    Vec3 outward_normal = (info.hit_point /* - center */) / radius;
+    // unit sphere centered at the local origin
+    Vec3 outward_normal = info.hit_point;
     info.front_face = local_ray.direction.dot(outward_normal) < 0;
     if(info.front_face)
         info.normal = outward_normal;
@@ -89,7 +87,7 @@ bool Sphere::samplePoint(const Vec3& viewpoint, SurfaceSample& sample) const {
         return false;
 
     Vec3 center = transform.pointApply(Vec3(0));
-    float world_radius = radius * scale.x;
+    float world_radius = /* radius * */ scale.x;
     if(world_radius <= EPSILON)
         return false;
 
@@ -145,16 +143,6 @@ bool Sphere::samplePoint(const Vec3& viewpoint, SurfaceSample& sample) const {
     return true;
 }
 
-
 AABB Sphere::calculateLocalAABB() const {
-    return AABB({/* center + */ Vec3(radius), /* center */ - Vec3(radius)});
-}
-
-const float& Sphere::getRadius() const {
-    return radius;
-}
-
-void Sphere::setRadius(const float r) {
-    radius = r;
-    refreshAABB();
+    return AABB({/* center + */ Vec3(1.0f /* * radius */), /* center */ - Vec3(1.0f /* * radius */)});
 }

@@ -3,6 +3,52 @@
 #include "imgui.h"
 #include <map>
 
+template <typename Item, typename OnChanged>
+void Gui::drawResourceCombo(
+    const char* label,
+    const std::vector<std::unique_ptr<Item>>& items,
+    const Item* current,
+    OnChanged&& onChanged
+) {
+    if(items.empty()) {
+        ImGui::TextDisabled("No %s available.", label);
+        return;
+    }
+
+    // ids keep duplicate names distinguishable in the combo
+    std::vector<std::string> labels;
+    labels.reserve(items.size());
+    for(const auto& item : items) {
+        labels.push_back(
+            std::string(item->getName()) + " #" + std::to_string(item->getID())
+        );
+    }
+
+    int selected = 0;
+    for(size_t i = 0; i < items.size(); i++) {
+        if(items[i].get() == current) {
+            selected = (int)i;
+            break;
+        }
+    }
+
+    auto itemGetter = [](void* data, int index, const char** out) {
+        const auto& strings = *static_cast<const std::vector<std::string>*>(data);
+        *out = strings[index].c_str();
+        return true;
+    };
+
+    if(ImGui::Combo(
+        label,
+        &selected,
+        itemGetter,
+        &labels,
+        (int)labels.size()
+    )) {
+        onChanged(items[selected].get());
+    }
+}
+
 static inline std::string toLower(std::string text) {
     std::transform(
         text.begin(),

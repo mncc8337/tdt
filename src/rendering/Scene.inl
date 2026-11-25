@@ -1,8 +1,10 @@
 #pragma once
 #include "Scene.h"
+#include <utility>
+#include <algorithm>
 
 template <typename T, typename... Args>
-Hittable& Scene::addObject(Args&&... args) {
+const Hittable& Scene::addObject(Args&&... args) {
     auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
     auto& ref = *ptr;
     objects.push_back(std::move(ptr));
@@ -37,3 +39,30 @@ Medium& Scene::addMedium(Args&&... args) {
     mediums.push_back(std::move(ptr));
     return ref;
 }
+
+template <typename T>
+T* Scene::findOwned(const std::vector<std::unique_ptr<T>>& items, const T* item) {
+    if(!item) return nullptr;
+
+    const auto found = std::find_if(
+        items.begin(),
+        items.end(),
+        [item](const std::unique_ptr<T>& owned) { return owned.get() == item; }
+    );
+    return found == items.end() ? nullptr : found->get();
+}
+
+template <typename T, typename Predicate>
+void Scene::eraseOwnedIf(std::vector<std::unique_ptr<T>>& items, Predicate&& predicate) {
+    items.erase(
+        std::remove_if(
+            items.begin(),
+            items.end(),
+            [&predicate](const std::unique_ptr<T>& owned) {
+                return predicate(owned.get());
+            }
+        ),
+        items.end()
+    );
+}
+

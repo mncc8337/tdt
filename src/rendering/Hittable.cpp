@@ -53,6 +53,10 @@ Material* Hittable::getMaterial() const {
     return material;
 }
 
+void Hittable::setMaterial(Material* material) {
+    this->material = material;
+}
+
 AABB getNodeAABB(const std::unique_ptr<Hittable>& obj) {
     return obj->getAABB();
 }

@@ -89,8 +89,8 @@ void cornelBox(Scene& scene, Camera& camera) {
         const std::string& name,
         Material& material,
         const std::string& model
-    ) -> Mesh& {
-        return static_cast<Mesh&>(scene.addObject<Mesh>(name, &material, model));
+    ) -> const Mesh& {
+        return static_cast<const Mesh&>(scene.addObject<Mesh>(name, &material, model));
     };
 
     auto addPlane = [&](
@@ -100,10 +100,10 @@ void cornelBox(Scene& scene, Camera& camera) {
         const Vec3& rotation = Vec3(0),
         const Vec3& scale = Vec3(1)
     ) {
-        Mesh& plane = addMesh(name, material, plane_model);
+        const Mesh& plane = addMesh(name, material, plane_model);
         Transform plane_t = plane.getTransform();
         plane_t.scale(scale).rotate(rotation).move(position);
-        plane.setTransform(plane_t);
+        scene.set_transform(&plane, plane_t);
     };
 
     addPlane("floor", white_matte, Vec3(0, 0, 0));
@@ -127,17 +127,18 @@ void cornelBox(Scene& scene, Camera& camera) {
     //     .move(Vec3(0.42f, 0.605f, -0.35f));
     // tall_box.setTransform(tall_box_t);
 
-    Hittable& sphere = scene.addObject<Sphere>("globe", &globe_mat, 0.5f);
+    const Hittable& sphere = scene.addObject<Sphere>("globe", &globe_mat);
     Transform sphere_t = sphere.getTransform();
+    sphere_t.scale(Vec3(0.5f));
     sphere_t.move(Vec3(0.42f, 0.55f, -0.35f));
-    sphere.setTransform(sphere_t);
+    scene.set_transform(&sphere, sphere_t);
 
-    Mesh& short_box = addMesh("short box", glass_mat, cube_model);
+    const Mesh& short_box = addMesh("short box", glass_mat, cube_model);
     Transform short_box_t = short_box.getTransform();
     short_box_t.scale(Vec3(0.3f))
         .rotate(Vec3(0, -0.4f, 0))
         .move(Vec3(-0.45f, 0.305f, 0.15f));
-    short_box.setTransform(short_box_t);
+    scene.set_transform(&short_box, short_box_t);
 }
 
 void demo(Scene& scene, Camera& camera) {
@@ -267,13 +268,13 @@ void demo(Scene& scene, Camera& camera) {
         const Vec3& position,
         const Vec3& rotation = Vec3(0),
         const Vec3& scale = Vec3(1)
-    ) -> Mesh& {
-        Mesh& mesh = static_cast<Mesh&>(
+    ) -> const Mesh& {
+        const Mesh& mesh = static_cast<const Mesh&>(
             scene.addObject<Mesh>(name, &material, model)
         );
         Transform t = mesh.getTransform();
         t.scale(scale).rotate(rotation).move(position);
-        mesh.setTransform(t);
+        scene.set_transform(&mesh, t);
         return mesh;
     };
 
@@ -282,14 +283,13 @@ void demo(Scene& scene, Camera& camera) {
         Material& material,
         float radius,
         const Vec3& position
-    ) -> Sphere& {
-        Sphere& sphere = static_cast<Sphere&>(
-            scene.addObject<Sphere>(name, &material, radius)
-        );
+    ) -> const Sphere& {
+        const Hittable& sphere = scene.addObject<Sphere>(name, &material);
         Transform t = sphere.getTransform();
+        t.scale(Vec3(radius));
         t.move(position);
-        sphere.setTransform(t);
-        return sphere;
+        scene.set_transform(&sphere, t);
+        return static_cast<const Sphere&>(sphere);
     };
 
     addMesh("floor", floor_mat, plane_model, Vec3(0), Vec3(0), Vec3(5, 1, 5));

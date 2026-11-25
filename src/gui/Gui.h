@@ -56,9 +56,6 @@ private:
     std::vector<std::function<void()>> pending_non_reset_actions;
     std::mutex scene_mutex;
 
-    // raise when the scene geometry is changed
-    bool is_geometry_dirty = false;
-
     // finished HDR frame, published by the render thread only while
     // is_data_ready is false and read by the GUI only while it is true
     std::vector<Color> tracer_buffer_copy;
@@ -104,7 +101,19 @@ private:
     PropertiesTab requested_properties_tab = PropertiesTab::Object;
     bool properties_tab_requested = false;
 
+    template <typename Item, typename OnChanged>
+    void drawResourceCombo(
+        const char* label,
+        const std::vector<std::unique_ptr<Item>>& items,
+        const Item* current,
+        OnChanged&& onChanged
+    );
+
+    sf::VideoMode initialWindowSize();
+
     std::string getTypeName(const std::type_info& ti);
+
+    void resetSelection();
 
     void postAction(std::function<void()> action);
     void postNonResetAction(std::function<void()> action);

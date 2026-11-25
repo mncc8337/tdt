@@ -22,10 +22,8 @@
 #include "rendering/material/Light.h"
 #include "rendering/Medium.h"
 #include "rendering/medium/Homogeneous.h"
-#include "rendering/hittable/Mesh.h"
-#include "rendering/hittable/Sphere.h"
 
-static sf::VideoMode initialWindowSize() {
+sf::VideoMode Gui::initialWindowSize() {
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
 
     unsigned width = std::min(1600u, desktop.size.x);
@@ -79,6 +77,13 @@ std::string Gui::getTypeName(const std::type_info& ti) {
 #endif
 }
 
+void Gui::resetSelection() {
+    selected_object = nullptr;
+    selected_material = nullptr;
+    selected_texture = nullptr;
+    selected_medium = nullptr;
+}
+
 void Gui::postAction(std::function<void()> action) {
     pending_actions.push_back(std::move(action));
     lock_requested = true;
@@ -109,11 +114,6 @@ void Gui::applyPendingActions() {
             edit();
         }
         pending_actions.clear();
-
-        if(is_geometry_dirty) {
-            scene.buildBVH();
-            is_geometry_dirty = false;
-        }
 
         // the scene has changed
         // so reset the accumulated result
@@ -254,7 +254,6 @@ void Gui::setSelectedMedium(const Medium* medium, bool open_menu) {
         properties_tab_requested = true;
     }
 }
-
 
 void Gui::renderRoutine() {
     sf::Clock delta_clock;
@@ -756,20 +755,29 @@ void Gui::drawObjectProperties(Hittable* object) {
     }
 
     if(transform_changed) {
-        postAction([this, obj = object, edited]() {
-            obj->setTransform(edited);
-            is_geometry_dirty = true;
+        // set_transform rebuilds the BVH after the object's AABB changes
+        postAction([this, object, edited]() {
+            scene.set_transform(object, edited);
         });
     }
 
-    if(Sphere* sphere = dynamic_cast<Sphere*>(object)) {
-        float radius = sphere->getRadius();
-        if(ImGui::DragFloat("Radius", &radius, 0.01f, 0.001f, 1000.0f)) {
-            postAction([this, sphere, radius]() {
-                sphere->setRadius(radius);
-                is_geometry_dirty = true;
+    ImGui::SeparatorText("Resources");
+    drawResourceCombo(
+        "Material",
+        scene.getMaterials(),
+        object->getMaterial(),
+        [this, object](const Material* material) {
+            postAction([this, object, material]() {
+                scene.set_material(object, material);
             });
         }
+    );
+
+    if(ImGui::Button("Delete object")) {
+        postAction([this, object]() {
+            scene.remove_object(object);
+            resetSelection();
+        });
     }
 }
 
@@ -803,6 +811,35 @@ void Gui::drawMaterialProperties(Material* material) {
     } else {
         ImGui::Text("not implemented");
     }
+
+    ImGui::SeparatorText("Resources");
+    drawResourceCombo(
+        "Texture",
+        scene.getTextures(),
+        material->getTexture(),
+        [this, material](const Texture* texture) {
+            postAction([this, material, texture]() {
+                scene.set_texture(material, texture);
+            });
+        }
+    );
+    drawResourceCombo(
+        "Medium",
+        scene.getMediums(),
+        material->getMedium(),
+        [this, material](const Medium* medium) {
+            postAction([this, material, medium]() {
+                scene.set_medium(material, medium);
+            });
+        }
+    );
+
+    if(ImGui::Button("Delete material")) {
+        postAction([this, material]() {
+            scene.remove_material(material);
+            resetSelection();
+        });
+    }
 }
 
 void Gui::drawTextureProperties(Texture* texture) {
@@ -822,6 +859,13 @@ void Gui::drawTextureProperties(Texture* texture) {
         }
     } else if(texture) {
         ImGui::Text("not implemented");
+    }
+
+    if(ImGui::Button("Delete texture")) {
+        postAction([this, texture]() {
+            scene.remove_texture(texture);
+            resetSelection();
+        });
     }
 }
 
@@ -864,6 +908,13 @@ void Gui::drawMediumProperties(Medium* medium) {
         }
     } else {
         ImGui::Text("not implemented");
+    }
+
+    if(ImGui::Button("Delete medium")) {
+        postAction([this, medium]() {
+            scene.remove_medium(medium);
+            resetSelection();
+        });
     }
 }
 

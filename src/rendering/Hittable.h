@@ -37,6 +37,7 @@ public:
     void setTransform(Transform t);
 
     Material* getMaterial() const;
+    void setMaterial(Material* material);
 };
 
 // for the BVHNode template

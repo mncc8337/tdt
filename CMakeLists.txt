@@ -61,7 +61,7 @@ find_package(OpenMP REQUIRED)
 add_executable(tdt)
 
 set_target_properties(tdt PROPERTIES
-    CXX_STANDARD 20
+    CXX_STANDARD 23
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
 )

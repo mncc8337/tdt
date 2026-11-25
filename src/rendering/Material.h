@@ -26,6 +26,7 @@ protected:
 
 public:
     Material(const std::string name, Texture* texture, Medium* medium);
+    virtual ~Material() = default;
 
     virtual ScatterResult scatter(
         Ray& ray,
@@ -42,5 +43,8 @@ public:
     virtual Color BRDF(const Vec3& in_dir, const Vec3& out_dir, const HitInfo& rec) const;
 
     Texture* getTexture() const;
+    void setTexture(Texture* texture);
+
     Medium* getMedium() const;
+    void setMedium(Medium* medium);
 };

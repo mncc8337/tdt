@@ -34,6 +34,14 @@ Texture* Material::getTexture() const {
     return texture;
 }
 
+void Material::setTexture(Texture* texture) {
+    this->texture = texture;
+}
+
 Medium* Material::getMedium() const {
     return medium;
+}
+
+void Material::setMedium(Medium* medium) {
+    this->medium = medium;
 }

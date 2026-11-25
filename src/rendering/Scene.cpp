@@ -2,15 +2,118 @@
 #include "misc/RNG.h"
 #include "misc/floatcmp.h"
 
-#include <algorithm>
 #include <cmath>
 
 const Medium& Scene::getGlobalMedium() const {
-    return *global_medium;
+    // keep a valid fallback so an empty scene (or a removed global medium)
+    // is still safe to trace.
+    static const Medium fallback("vacuum");
+    return global_medium ? *global_medium : fallback;
 }
 
 void Scene::setGlobalMedium(Medium& medium) {
     global_medium = &medium;
+}
+
+void Scene::remove_object(const Hittable* object) {
+    Hittable* target = findOwned(objects, object);
+    if(!target) return;
+
+    std::erase(lights, target);
+    eraseOwnedIf(objects, [target](Hittable* owned) { return owned == target; });
+    buildBVH();
+}
+
+void Scene::set_transform(const Hittable* object, const Transform& transform) {
+    Hittable* target = findOwned(objects, object);
+    if(!target) return;
+
+    target->setTransform(transform);
+    buildBVH();
+}
+
+void Scene::set_material(const Hittable* object, const Material* material) {
+    Hittable* target = findOwned(objects, object);
+    if(!target) return;
+
+    Material* next = findOwned(materials, material);
+    if(!next) return;
+
+    target->setMaterial(next);
+
+    std::erase(lights, target);
+    if(next and next->isEmissive())
+        lights.push_back(target);
+}
+
+void Scene::remove_material(const Material* material) {
+    Material* target = findOwned(materials, material);
+    if(!target) return;
+
+    // FIXME:
+    // throw an exception when the material is used by an object
+    // for now just silently drop the request
+    for(const auto& object : objects) {
+        if(object->getMaterial() == target)
+            return;
+    }
+
+    eraseOwnedIf(materials, [target](Material* owned) { return owned == target; });
+}
+
+void Scene::set_texture(const Material* material, const Texture* texture) {
+    Material* target = findOwned(materials, material);
+    if(!target) return;
+
+    Texture* next = findOwned(textures, texture);
+    if(!next) return;
+
+    target->setTexture(next);
+}
+
+void Scene::set_medium(const Material* material, const Medium* medium) {
+    Material* target = findOwned(materials, material);
+    if(!target) return;
+
+    Medium* next = findOwned(mediums, medium);
+    if(!next) return;
+
+    target->setMedium(next);
+}
+
+void Scene::remove_texture(const Texture* texture) {
+    Texture* target = findOwned(textures, texture);
+    if(!target) return;
+
+    // FIXME:
+    // throw an exception when the texture is used by a material
+    // for now just silently drop the request
+    for(const auto& material : materials) {
+        if(material->getTexture() == target)
+            return;
+    }
+
+    eraseOwnedIf(textures, [target](Texture* owned) { return owned == target; });
+}
+
+void Scene::remove_medium(const Medium* medium) {
+    Medium* target = findOwned(mediums, medium);
+    if(!target) return;
+
+    // FIXME:
+    // throw an exception when the material is used by an object
+    // for now just silently drop the request
+    for(const auto& material : materials) {
+        if(material->getMedium() == target)
+            return;
+    }
+
+    // FIXME:
+    // throw an exception when trying to delte the global medium
+    if(global_medium == target)
+        return;
+
+    eraseOwnedIf(mediums, [target](Medium* owned) { return owned == target; });
 }
 
 const std::vector<std::unique_ptr<Hittable>>& Scene::getObjects() const {
