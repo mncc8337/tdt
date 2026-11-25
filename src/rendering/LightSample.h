@@ -15,5 +15,5 @@ struct LightSample {
     float light_distance = 0.0f; // distance from the shading point to the sampled point
     float pdf = 0.0f; // solid-angle pdf, including the light-selection probability
     Color emitted_radiance; // emitted radiance at the sampled point
-    const Hittable* light = nullptr; // the sampled light, so shadow rays can ignore it
+    const Hittable* light = nullptr; // sampled light; used to avoid double-counting its emission on the next bounce
 };

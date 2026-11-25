@@ -33,11 +33,7 @@ bool Scene::sampleLight(const Vec3& from, LightSample& sample) const {
     if(lights.empty()) return false;
 
     // uniform light selection for this example
-    const int index = std::min(
-        int(RNG::uniform() * float(lights.size())),
-        int(lights.size()) - 1
-    );
-    Hittable* light = lights[index];
+    const Hittable* light = RNG::sample(lights);
 
     SurfaceSample surface;
     if(!light->samplePoint(from, surface))

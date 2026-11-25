@@ -105,8 +105,6 @@ bool Mesh::samplePoint(const Vec3&, SurfaceSample& sample) const {
     if(tris.empty())
         return false;
 
-    // World-space vertices of a triangle. Using world space makes the area
-    // correct even when the mesh has a non-uniform scale.
     auto worldTriangle = [&](const RawTriangle& tri, Vec3& a, Vec3& b, Vec3& c) {
         a = transform.pointApply(tri.origin);
         b = transform.pointApply(tri.origin + tri.edge1);
@@ -122,7 +120,7 @@ bool Mesh::samplePoint(const Vec3&, SurfaceSample& sample) const {
     if(total_area <= EPSILON)
         return false;
 
-    // Pick a triangle proportional to its area.
+    // pick a triangle proportional to its area
     float pick = RNG::uniform() * total_area;
     float accum = 0.0f;
 
@@ -141,7 +139,7 @@ bool Mesh::samplePoint(const Vec3&, SurfaceSample& sample) const {
         }
     }
 
-    // Uniform barycentric sample inside the chosen triangle.
+    // uniform barycentric sample inside the chosen triangle
     float u = RNG::uniform();
     float v = RNG::uniform();
     if(u + v > 1.0f) {

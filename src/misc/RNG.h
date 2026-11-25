@@ -1,6 +1,7 @@
 #pragma once
 
 #include <random>
+#include <vector>
 #include "math/Vec3.h"
 #include "math/Vec2.h"
 
@@ -19,4 +20,9 @@ public:
     static Vec2 pointInCircle(const float radius = 1.0f);
     static Vec3 vec3();
     static Vec2 vec2();
+
+    template <typename T>
+    static const T& sample(const std::vector<T>& pool);
 };
+
+#include "RNG.inl"

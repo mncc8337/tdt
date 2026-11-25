@@ -75,7 +75,11 @@ const std::vector<Color>& RayTracer::getBuffer() const {
 const Color RayTracer::trace(Ray ray, const Scene& scene) const {
     Color final_color(0);
     Color throughput(1);
-    bool is_last_bounce_direct_sampled = false;
+
+    // light whose emission was already added by next-event estimation at the
+    // previous bounce. tracking the light keeps the double-count guard correct
+    // when later bounces hit a different light.
+    const Hittable* directly_sampled_light = nullptr;
 
     // use std::array instead of std::stack to reduce dynamic allocation
     // bounded by max_bounces: each bounce can push at most one medium
@@ -122,7 +126,7 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
             // got scattered by the medium in the way
             // direct light sampling is only implemented for surfaces
             // so allow emission to be collected on the next light hit.
-            is_last_bounce_direct_sampled = false;
+            directly_sampled_light = nullptr;
             continue;
         }
 
@@ -138,19 +142,21 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
             break;
         }
 
-        // skip samples that are handled by direct sampling
-        // avoid double counting
-        if(!is_last_bounce_direct_sampled) {
+        // only skip emission from the light whose contribution was already
+        // added by NEE at the previous bounce
+        // other lights still need to be collected when the continued path
+        // happens to hit them
+        bool emission_already_accounted = (obj == directly_sampled_light);
+        directly_sampled_light = nullptr;
+        if(!emission_already_accounted) {
             final_color += throughput * rec.material->emitted(rec);
         }
 
-        // next-event estimation for diffuse surfaces
+        // next-event estimation for materials with an evaluable BSDF
         // this is the simplest form: one light sample, conditional pdf
-        bool nee_succeed = false;
         if(rec.material->hasNEE()) {
             LightSample light_sample;
             if(scene.sampleLight(rec.hit_point, light_sample)) {
-                nee_succeed = true;
                 float cos_theta = std::max(
                     0.0f,
                     rec.normal.dot(light_sample.light_direction)
@@ -181,6 +187,10 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
                         Color att = rec.material->BRDF(light_sample.light_direction, -ray.direction, rec);
                         att *= light_sample.emitted_radiance * cos_theta / light_sample.pdf;
                         final_color += throughput * att;
+
+                        // remember which light was counted for so the next bounce
+                        // does not count its emission again
+                        directly_sampled_light = light_sample.light;
                     }
                 }
             }
@@ -200,9 +210,8 @@ const Color RayTracer::trace(Ray ray, const Scene& scene) const {
             break;
         } else if(result == ScatterResult::Scattered) {
             throughput *= surface_attenuation;
-            is_last_bounce_direct_sampled = nee_succeed;
         } else if(result == ScatterResult::Refracted) {
-            is_last_bounce_direct_sampled = false;
+            directly_sampled_light = nullptr;
             Medium* object_medium = rec.material->getMedium();
             if(object_medium) {
                 if(rec.front_face) {
