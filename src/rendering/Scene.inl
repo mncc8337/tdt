@@ -3,13 +3,27 @@
 #include <utility>
 #include <algorithm>
 
+inline unsigned Scene::nextID() {
+    return next_id++;
+}
+
+inline void Scene::reserveID(unsigned id) {
+    next_id = std::max(next_id, id + 1u);
+}
+
 template <typename T, typename... Args>
 const Hittable& Scene::addObject(Args&&... args) {
-    auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
+    return addObject<T>(nextID(), std::forward<Args>(args)...);
+}
+
+template <typename T, typename... Args>
+const Hittable& Scene::addObject(unsigned id, Args&&... args) {
+    auto ptr = std::make_unique<T>(id, std::forward<Args>(args)...);
     auto& ref = *ptr;
+    reserveID(id);
     objects.push_back(std::move(ptr));
 
-    if(ref.getMaterial()->isEmissive()) {
+    if(ref.getMaterial() and ref.getMaterial()->isEmissive()) {
         lights.push_back(&ref);
     }
 
@@ -18,24 +32,42 @@ const Hittable& Scene::addObject(Args&&... args) {
 
 template <typename T, typename... Args>
 Material& Scene::addMaterial(Args&&... args) {
-    auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
+    return addMaterial<T>(nextID(), std::forward<Args>(args)...);
+}
+
+template <typename T, typename... Args>
+Material& Scene::addMaterial(unsigned id, Args&&... args) {
+    auto ptr = std::make_unique<T>(id, std::forward<Args>(args)...);
     auto& ref = *ptr;
+    reserveID(id);
     materials.push_back(std::move(ptr));
     return ref;
 }
 
 template <typename T, typename... Args>
 Texture& Scene::addTexture(Args&&... args) {
-    auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
+    return addTexture<T>(nextID(), std::forward<Args>(args)...);
+}
+
+template <typename T, typename... Args>
+Texture& Scene::addTexture(unsigned id, Args&&... args) {
+    auto ptr = std::make_unique<T>(id, std::forward<Args>(args)...);
     auto& ref = *ptr;
+    reserveID(id);
     textures.push_back(std::move(ptr));
     return ref;
 }
 
 template <typename T, typename... Args>
 Medium& Scene::addMedium(Args&&... args) {
-    auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
+    return addMedium<T>(nextID(), std::forward<Args>(args)...);
+}
+
+template <typename T, typename... Args>
+Medium& Scene::addMedium(unsigned id, Args&&... args) {
+    auto ptr = std::make_unique<T>(id, std::forward<Args>(args)...);
     auto& ref = *ptr;
+    reserveID(id);
     mediums.push_back(std::move(ptr));
     return ref;
 }
@@ -65,4 +97,3 @@ void Scene::eraseOwnedIf(std::vector<std::unique_ptr<T>>& items, Predicate&& pre
         items.end()
     );
 }
-

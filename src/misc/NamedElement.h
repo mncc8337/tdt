@@ -5,12 +5,13 @@
 class NamedElement {
 private:
     std::string name;
-    static unsigned id_count;
     const unsigned id;
 
 public:
-    NamedElement(std::string name);
-    ~NamedElement();
+    // ids are owned by the Scene that creates the element, so a loaded
+    // element can keep the id it had when the scene was saved
+    NamedElement(unsigned id, std::string name);
+    virtual ~NamedElement();
 
     const std::string getName() const;
     void setName(const std::string& name);

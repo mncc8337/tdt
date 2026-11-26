@@ -43,6 +43,14 @@ FetchContent_Declare(nativefiledialog
     SYSTEM
 )
 
+FetchContent_Declare(nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+    GIT_SHALLOW ON
+    EXCLUDE_FROM_ALL
+    SYSTEM
+)
+
 option(SFML_BUILD_AUDIO "Build audio" OFF)
 option(SFML_BUILD_NETWORK "Build network" OFF)
 
@@ -55,6 +63,7 @@ option(IMGUI_SFML_IMGUI_DEMO "Build imgui_demo.cpp" ON)
 
 FetchContent_MakeAvailable(imgui-sfml)
 FetchContent_MakeAvailable(nativefiledialog)
+FetchContent_MakeAvailable(nlohmann_json)
 
 find_package(OpenMP REQUIRED)
 
@@ -71,6 +80,7 @@ target_link_libraries(tdt
       SFML::Graphics
       OpenMP::OpenMP_CXX
       nfd
+      nlohmann_json::nlohmann_json
     PUBLIC
       ImGui-SFML::ImGui-SFML
 )

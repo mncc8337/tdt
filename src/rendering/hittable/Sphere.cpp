@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <numbers>
 
-Sphere::Sphere( const std::string name, Material* material): Hittable(name, material) {
+Sphere::Sphere(unsigned id, const std::string name, Material* material): Hittable(id, name, material) {
     refreshAABB();
 }
 

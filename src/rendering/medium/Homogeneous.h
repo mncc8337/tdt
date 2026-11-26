@@ -19,6 +19,7 @@ private:
 
 public:
     Homogeneous(
+        unsigned id,
         const std::string name,
         const float ior,
         const Color sigma_a,

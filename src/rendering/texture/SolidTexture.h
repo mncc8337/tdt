@@ -7,10 +7,10 @@ private:
     Color color;
 
 public:
-    ColorTexture(const std::string name, Color color);
+    ColorTexture(unsigned id, const std::string name, Color color);
 
     Color get(const HitInfo& rec) const override;
 
-    const Color& getColor();
+    const Color& getColor() const;
     void setColor(const Color c);
 };

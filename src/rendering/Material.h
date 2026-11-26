@@ -25,7 +25,7 @@ protected:
     Medium* medium;
 
 public:
-    Material(const std::string name, Texture* texture, Medium* medium);
+    Material(unsigned id, const std::string name, Texture* texture, Medium* medium);
     virtual ~Material() = default;
 
     virtual ScatterResult scatter(

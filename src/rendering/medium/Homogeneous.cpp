@@ -5,13 +5,14 @@
 #include <cmath>
 
 Homogeneous::Homogeneous(
+    unsigned id,
     const std::string name,
     const float ior,
     const Color sigma_a,
     const Color sigma_s,
     const float density
 ):
-    Medium(name, ior),
+    Medium(id, name, ior),
     sigma_a(sigma_a),
     sigma_s(sigma_s),
     density(density) {

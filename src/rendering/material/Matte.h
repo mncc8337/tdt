@@ -4,7 +4,7 @@
 
 class Matte: public Material {
 public:
-    Matte(const std::string name, Texture* texture);
+    Matte(unsigned id, const std::string name, Texture* texture);
 
     ScatterResult scatter(
         Ray& ray,

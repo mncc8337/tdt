@@ -1,11 +1,9 @@
 #include "NamedElement.h"
 #include <print>
 
-unsigned NamedElement::id_count = 0;
-
-NamedElement::NamedElement(std::string name):
+NamedElement::NamedElement(unsigned id, std::string name):
     name(name),
-    id(id_count++) {
+    id(id) {
     std::println("created element {} with name \"{}\"", id, name.c_str());
 }
 

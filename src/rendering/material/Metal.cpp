@@ -2,8 +2,8 @@
 #include "misc/floatcmp.h"
 #include "misc/RNG.h"
 
-Metal::Metal(const std::string name, Texture* texture, float roughness):
-    Material(name, texture, nullptr),
+Metal::Metal(unsigned id, const std::string name, Texture* texture, float roughness):
+    Material(id, name, texture, nullptr),
     roughness(roughness) {}
 
 ScatterResult Metal::scatter(

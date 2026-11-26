@@ -5,7 +5,7 @@
 
 class Texture: public NamedElement {
 public:
-    Texture(const std::string name);
+    Texture(unsigned id, const std::string name);
     virtual ~Texture() = default;
 
     virtual Color get(const HitInfo& rec) const = 0;

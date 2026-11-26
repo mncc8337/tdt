@@ -1,8 +1,8 @@
 #include "SolidTexture.h"
 #include "HitInfo.h"
 
-ColorTexture::ColorTexture(const std::string name, Color color):
-    Texture(name),
+ColorTexture::ColorTexture(unsigned id, const std::string name, Color color):
+    Texture(id, name),
     color(color) {}
 
 Color ColorTexture::get(const HitInfo& rec) const {
@@ -10,7 +10,7 @@ Color ColorTexture::get(const HitInfo& rec) const {
 }
 
 
-const Color& ColorTexture::getColor() {
+const Color& ColorTexture::getColor() const {
     return color;
 }
 

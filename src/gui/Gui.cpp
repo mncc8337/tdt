@@ -13,6 +13,7 @@
 #include "nfd.hpp"
 
 #include "misc/ColorUtils.h"
+#include "rendering/SceneLoader.h"
 #include "rendering/Texture.h"
 #include "rendering/texture/SolidTexture.h"
 #include "rendering/Material.h"
@@ -165,6 +166,49 @@ void Gui::saveWithDialog() {
     nfdresult_t result = NFD::SaveDialog(outPath, filterItem, 1);
     if(result == NFD_OKAY) {
         save(outPath.get());
+    } else if(result == NFD_CANCEL) {
+        // do nothing
+    } else {
+        printf("Error: %s\n", NFD::GetError());
+    }
+}
+
+void Gui::saveSceneWithDialog() {
+    NFD::Guard nfdGuard;
+    NFD::UniquePath outPath;
+    nfdfilteritem_t filterItem[] = {{"Scene", "tdt"}};
+
+    nfdresult_t result = NFD::SaveDialog(outPath, filterItem, 1);
+    if(result == NFD_OKAY) {
+        std::filesystem::path path = outPath.get();
+        if(path.extension().empty())
+            path.replace_extension(".tdt");
+        // saving only reads the scene, but it still needs a stable snapshot
+        std::lock_guard<std::mutex> lock(scene_mutex);
+        SceneLoader::save(scene, path, &camera);
+    } else if(result == NFD_CANCEL) {
+        // do nothing
+    } else {
+        printf("Error: %s\n", NFD::GetError());
+    }
+}
+
+void Gui::loadSceneWithDialog() {
+    NFD::Guard nfdGuard;
+    NFD::UniquePath inPath;
+    nfdfilteritem_t filterItem[] = {{"Scene", "tdt"}};
+
+    nfdresult_t result = NFD::OpenDialog(inPath, filterItem, 1);
+    if(result == NFD_OKAY) {
+        // queued like other scene edits: applyPendingActions holds the mutex,
+        // so the old scene is deallocated only after the current pass ends.
+        postAction([this, path = std::filesystem::path(inPath.get())]() {
+            if(SceneLoader::load(scene, path, &camera)) {
+                // every element pointer held by the GUI belonged to the
+                // old scene and is dangling now
+                resetSelection();
+            }
+        });
     } else if(result == NFD_CANCEL) {
         // do nothing
     } else {
@@ -338,6 +382,12 @@ void Gui::drawMainMenuBar() {
     if(ImGui::BeginMenu("File")) {
         if(ImGui::MenuItem("Save render")) {
             saveWithDialog();
+        }
+        if(ImGui::MenuItem("Save scene")) {
+            saveSceneWithDialog();
+        }
+        if(ImGui::MenuItem("Load scene")) {
+            loadSceneWithDialog();
         }
         ImGui::EndMenu();
     }
@@ -612,8 +662,20 @@ void Gui::drawTracerTab() {
 
     ImGui::SameLine();
 
-    if(ImGui::Button("Save")) {
+    if(ImGui::Button("Save render")) {
         saveWithDialog();
+    }
+
+    ImGui::SameLine();
+
+    if(ImGui::Button("Save scene")) {
+        saveSceneWithDialog();
+    }
+
+    ImGui::SameLine();
+
+    if(ImGui::Button("Load scene")) {
+        loadSceneWithDialog();
     }
 
     ImGui::Separator();

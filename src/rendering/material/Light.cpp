@@ -1,12 +1,13 @@
 #include "Light.h"
 
 Light::Light(
+    unsigned id,
     const std::string name,
     Texture* texture,
     const float emission_strength,
     const Color color
 ):
-    Material(name, texture, nullptr),
+    Material(id, name, texture, nullptr),
     emission_strength(emission_strength),
     color(color) {}
 
@@ -33,4 +34,12 @@ float& Light::getEmissionStrength() {
 
 const float& Light::getEmissionStrength() const {
     return emission_strength;
+}
+
+Color& Light::getColor() {
+    return color;
+}
+
+const Color& Light::getColor() const {
+    return color;
 }

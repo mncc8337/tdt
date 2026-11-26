@@ -1,7 +1,7 @@
 #include "Medium.h"
 
-Medium::Medium(const std::string name, const float ior):
-    NamedElement(name),
+Medium::Medium(unsigned id, const std::string name, const float ior):
+    NamedElement(id, name),
     ior(ior) {}
 
 const float& Medium::getIOR() const {

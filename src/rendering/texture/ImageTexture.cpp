@@ -3,9 +3,14 @@
 #include "rendering/Hittable.h"
 #include <algorithm>
 
-ImageTexture::ImageTexture(const std::string name, const std::filesystem::path& filename):
-    Texture(name),
-    image(filename) {}
+ImageTexture::ImageTexture(unsigned id, const std::string name, const std::filesystem::path& filename):
+    Texture(id, name),
+    image(filename),
+    filename(filename) {}
+
+const std::filesystem::path& ImageTexture::getFilename() const {
+    return filename;
+}
 
 Color ImageTexture::get(const HitInfo& rec) const {
     const sf::Vector2u size = image.getSize();

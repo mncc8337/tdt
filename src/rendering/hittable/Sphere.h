@@ -9,6 +9,7 @@ private:
 
 public:
     Sphere(
+        unsigned id,
         const std::string name,
         Material* material
     );

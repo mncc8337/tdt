@@ -9,7 +9,7 @@ private:
     float ior;
 
 public:
-    Medium(const std::string name, const float ior = 1.0f);
+    Medium(unsigned id, const std::string name, const float ior = 1.0f);
     virtual ~Medium() = default;
 
     const float& getIOR() const;

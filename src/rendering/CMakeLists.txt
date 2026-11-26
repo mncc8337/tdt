@@ -2,6 +2,7 @@ target_sources(tdt
   PRIVATE 
     LightSample.cpp
     Scene.cpp
+    SceneLoader.cpp
     Camera.cpp
     HitInfo.cpp
     Material.cpp

@@ -121,6 +121,8 @@ private:
 
     bool save(const std::filesystem::path &filename);
     void saveWithDialog();
+    void saveSceneWithDialog();
+    void loadSceneWithDialog();
 
     void setSelectedObject(const Hittable* object, bool open_menu = true);
     void setSelectedMaterial(const Material* material, bool open_menu = true);

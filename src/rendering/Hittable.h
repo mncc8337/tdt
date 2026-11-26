@@ -26,7 +26,7 @@ protected:
     void refreshAABB();
 
 public:
-    Hittable(const std::string name, Material* material);
+    Hittable(unsigned id, const std::string name, Material* material);
     virtual ~Hittable();
     virtual HitInfo hit(const Ray& ray) const = 0;
     virtual Vec2 getUV(const HitInfo& rec) const = 0;

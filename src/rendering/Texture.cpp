@@ -1,4 +1,4 @@
 #include "Texture.h"
 
-Texture::Texture(const std::string name):
-    NamedElement(name) {}
+Texture::Texture(unsigned id, const std::string name):
+    NamedElement(id, name) {}

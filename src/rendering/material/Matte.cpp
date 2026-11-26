@@ -3,8 +3,8 @@
 #include "misc/RNG.h"
 #include <numbers>
 
-Matte::Matte(const std::string name, Texture* texture):
-    Material(name, texture, nullptr) {}
+Matte::Matte(unsigned id, const std::string name, Texture* texture):
+    Material(id, name, texture, nullptr) {}
 
 ScatterResult Matte::scatter(
     Ray& ray,

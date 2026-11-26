@@ -7,7 +7,7 @@ class FineParticle: public Material {
 private:
 
 public:
-    FineParticle(const std::string name, Texture* texture, Homogeneous* medium);
+    FineParticle(unsigned id, const std::string name, Texture* texture, Homogeneous* medium);
 
     ScatterResult scatter(
         Ray& ray,

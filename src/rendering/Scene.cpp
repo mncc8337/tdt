@@ -3,11 +3,12 @@
 #include "misc/floatcmp.h"
 
 #include <cmath>
+#include <system_error>
 
 const Medium& Scene::getGlobalMedium() const {
     // keep a valid fallback so an empty scene (or a removed global medium)
     // is still safe to trace.
-    static const Medium fallback("vacuum");
+    static const Medium fallback(0, "vacuum");
     return global_medium ? *global_medium : fallback;
 }
 
@@ -214,3 +215,24 @@ void Scene::buildBVH() {
 
     bvh_root = std::make_unique<BVHNode>(objects, 0, objects.size());
 }
+
+Scene::~Scene() {
+    clear();
+}
+
+void Scene::clear() {
+    objects.clear();
+    materials.clear();
+    textures.clear();
+    mediums.clear();
+    lights.clear();
+    global_medium = nullptr;
+    bvh_root.reset();
+    next_id = 0;
+
+    std::error_code ec;
+    for(const auto& path : temp_assets)
+        std::filesystem::remove(path, ec);
+    temp_assets.clear();
+}
+

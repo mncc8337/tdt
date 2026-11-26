@@ -4,19 +4,27 @@
 #include "misc/meshloader.h"
 #include "misc/RNG.h"
 
-Mesh::Mesh(const std::string name, Material* material, const std::vector<RawTriangle>& src_tris):
-    Hittable(name, material), tris(src_tris) {
+Mesh::Mesh(unsigned id, const std::string name, Material* material, const std::vector<RawTriangle>& src_tris):
+    Hittable(id, name, material), tris(src_tris) {
     if(tris.empty()) return;
     refreshAABB();
     bvh_root = std::make_unique<BVHNode>(tris, 0, tris.size());
 }
 
-Mesh::Mesh(const std::string name, Material* material, std::string filename):
-    Hittable(name, material) {
+Mesh::Mesh(unsigned id, const std::string name, Material* material, std::string filename):
+    Hittable(id, name, material), filename(filename) {
     loadMeshFrom(filename, tris);
     if(tris.empty()) return;
     refreshAABB();
     bvh_root = std::make_unique<BVHNode>(tris, 0, tris.size());
+}
+
+const std::string& Mesh::getFilename() const {
+    return filename;
+}
+
+const std::vector<RawTriangle>& Mesh::getTriangles() const {
+    return tris;
 }
 
 AABB Mesh::calculateLocalAABB() const {

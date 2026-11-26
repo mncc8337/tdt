@@ -1,7 +1,7 @@
 #include "Material.h"
 
-Material::Material(const std::string name, Texture* texture, Medium* medium):
-    NamedElement(name),
+Material::Material(unsigned id, const std::string name, Texture* texture, Medium* medium):
+    NamedElement(id, name),
     texture(texture),
     medium(medium) {}
 

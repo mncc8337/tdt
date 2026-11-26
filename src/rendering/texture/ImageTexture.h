@@ -7,9 +7,13 @@
 class ImageTexture: public Texture {
 private:
     sf::Image image;
+    // kept for scene serialization
+    std::filesystem::path filename;
 
 public:
-    ImageTexture(const std::string name, const std::filesystem::path &filename);
+    ImageTexture(unsigned id, const std::string name, const std::filesystem::path &filename);
+
+    const std::filesystem::path& getFilename() const;
 
     Color get(const HitInfo& rec) const override;
 };

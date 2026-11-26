@@ -1,7 +1,7 @@
 #include "Hittable.h"
 
-Hittable::Hittable(const std::string name, Material* material):
-    NamedElement(name),
+Hittable::Hittable(unsigned id, const std::string name, Material* material):
+    NamedElement(id, name),
     material(material) {}
 
 Hittable::~Hittable() {}

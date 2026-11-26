@@ -1,8 +1,8 @@
 #include "FineParticle.h"
 #include "misc/floatcmp.h"
 
-FineParticle::FineParticle(const std::string name, Texture* texture, Homogeneous* medium):
-    Material(name, texture, medium) {}
+FineParticle::FineParticle(unsigned id, const std::string name, Texture* texture, Homogeneous* medium):
+    Material(id, name, texture, medium) {}
 
 ScatterResult FineParticle::scatter(
     Ray& ray,
