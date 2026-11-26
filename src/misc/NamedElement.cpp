@@ -17,6 +17,10 @@ const std::string NamedElement::getName() const {
     return name;
 }
 
+void NamedElement::setName(const std::string& name) {
+    this->name = name;
+}
+
 const unsigned NamedElement::getID() const {
     return id;
 }

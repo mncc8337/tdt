@@ -138,7 +138,7 @@ private:
     void drawListing(
         const std::string& calling,
         const std::vector<std::unique_ptr<ItemType>>& items,
-        const ItemType* selected_item,
+        ItemType* selected_item,
         Setter&& selectedItemSetter
     );
 

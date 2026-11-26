@@ -1,6 +1,7 @@
 #pragma once
 #include "Gui.h"
 #include "imgui.h"
+#include "misc/NamedElement.h"
 #include <map>
 
 template <typename Item, typename OnChanged>
@@ -59,11 +60,27 @@ static inline std::string toLower(std::string text) {
     return text;
 }
 
+namespace {
+// translation for the generic below
+void remove_item(Scene& scene, const Hittable* hittable) {
+    scene.remove_object(hittable);
+}
+void remove_item(Scene& scene, const Material* material) {
+    scene.remove_material(material);
+}
+void remove_item(Scene& scene, const Texture* texture) {
+    scene.remove_texture(texture);
+}
+void remove_item(Scene& scene, const Medium* medium) {
+    scene.remove_medium(medium);
+}
+} // namespace
+
 template <typename ItemType, typename Setter>
 void Gui::drawListing(
     const std::string& calling,
     const std::vector<std::unique_ptr<ItemType>>& items,
-    const ItemType* selected_item,
+    ItemType* selected_item,
     Setter&& selectedItemSetter
 ) {
     static char filter[128] = "";
@@ -128,5 +145,43 @@ void Gui::drawListing(
             ImGui::TreePop();
         }
         ImGui::PopID();
+    }
+
+    if(selected_item) {
+        ImGui::Separator();
+
+        NamedElement* named = static_cast<NamedElement*>(selected_item);
+        static char item_name[128];
+        const std::string& current_name = named->getName();
+        std::snprintf(item_name, sizeof(item_name), "%s", current_name.c_str());
+
+        if(ImGui::InputText(
+            "##name",
+            item_name,
+            sizeof(item_name),
+            ImGuiInputTextFlags_EnterReturnsTrue
+        )) {
+            std::string new_name(item_name);
+            if(new_name != current_name) {
+                postNonResetAction([named, new_name]() {
+                    named->setName(new_name);
+                });
+            }
+        }
+        if(ImGui::IsItemDeactivatedAfterEdit()) {
+            std::string new_name(item_name);
+            if(new_name != current_name) {
+                postNonResetAction([named, new_name]() {
+                    named->setName(new_name);
+                });
+            }
+        }
+
+        if(ImGui::Button("Delete item")) {
+            postAction([this, selected_item]() {
+                remove_item(scene, selected_item);
+                resetSelection();
+            });
+        }
     }
 }

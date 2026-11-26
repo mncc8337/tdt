@@ -772,13 +772,6 @@ void Gui::drawObjectProperties(Hittable* object) {
             });
         }
     );
-
-    if(ImGui::Button("Delete object")) {
-        postAction([this, object]() {
-            scene.remove_object(object);
-            resetSelection();
-        });
-    }
 }
 
 void Gui::drawMaterialProperties(Material* material) {
@@ -833,13 +826,6 @@ void Gui::drawMaterialProperties(Material* material) {
             });
         }
     );
-
-    if(ImGui::Button("Delete material")) {
-        postAction([this, material]() {
-            scene.remove_material(material);
-            resetSelection();
-        });
-    }
 }
 
 void Gui::drawTextureProperties(Texture* texture) {
@@ -859,13 +845,6 @@ void Gui::drawTextureProperties(Texture* texture) {
         }
     } else if(texture) {
         ImGui::Text("not implemented");
-    }
-
-    if(ImGui::Button("Delete texture")) {
-        postAction([this, texture]() {
-            scene.remove_texture(texture);
-            resetSelection();
-        });
     }
 }
 
@@ -908,13 +887,6 @@ void Gui::drawMediumProperties(Medium* medium) {
         }
     } else {
         ImGui::Text("not implemented");
-    }
-
-    if(ImGui::Button("Delete medium")) {
-        postAction([this, medium]() {
-            scene.remove_medium(medium);
-            resetSelection();
-        });
     }
 }
 
